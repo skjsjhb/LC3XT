@@ -9,5 +9,9 @@
   "devDependencies": {
     "tsx": "^4.19.0",
     "typescript": "^5.5.4"
+  },
+  "dependencies": {
+    "ansicolor": "^2.0.3",
+    "vitest": "^2.0.5"
   }
 }

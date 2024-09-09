@@ -1,4 +1,4 @@
-import { Compilation } from "./compilation";
+import { applyHyperProcess } from "./hyper";
 
 /**
  * A unit is an instruction or a pseudo instruction.
@@ -59,7 +59,32 @@ const descriptors = [
 const ops = new Set([...descriptors.map(it => it[0])]) as Set<string>;
 
 /**
- * Parses the sources and break it down to units.
+ * Contains information during the compilation process.
+ */
+export interface Compilation {
+    /**
+     * The symbol table.
+     */
+    symbols: Map<string, number>;
+
+    /**
+     * The string constant table.
+     */
+    strings: Map<number, string>;
+
+    /**
+     * The source code
+     */
+    source: string;
+
+    /**
+     * Generated instructions.
+     */
+    units: Unit[];
+}
+
+/**
+ * Parses the sources and break it down.
  */
 export function tokenize(comp: Compilation): Unit[] {
     const tokens = comp.source.split(" ").map(s => s.trim()).filter(s => s.length > 0);
@@ -97,7 +122,7 @@ export function tokenize(comp: Compilation): Unit[] {
             // It's more common that an argument was missed
             // This can avoid messing up the entire program
             if (ops.has(a)) {
-                throw `CE: Unexpected instruction ${a} here`;
+                throw `CE: Unexpected instruction ${a} when collecting args for ${opr}`;
             }
             args.push(a);
         }
@@ -140,7 +165,7 @@ function isRegister(a: string): boolean {
 }
 
 function toRegister(a: string): string {
-    if (!a.startsWith("R")) throw `CE: Unknown register ${a}`;
+    if (!a.startsWith("R")) throw `CE: Expecting register, received ${a}`;
     const rid = parseInt(a.slice(1));
     if (rid < 0 || rid > 7) throw `CE: Invalid register ${a}`;
     return rid.toString(2).padStart(3, "0");
@@ -409,10 +434,18 @@ export function buildBinary(comp: Compilation, units: Unit[]): string[] {
     return out;
 }
 
-function checkBinary(out: string[]) {
-    out.forEach(it => {
-        if (it.length != 16) {
-            throw `CE: `;
-        }
-    });
+/**
+ * Assembles the program.
+ */
+export function assemble(src: string): string[] {
+    const comp: Compilation = {
+        strings: new Map(),
+        symbols: new Map(),
+        source: src,
+        units: []
+    };
+    applyHyperProcess(comp);
+    const units = tokenize(comp);
+    buildSymbolTable(comp, units);
+    return buildBinary(comp, units);
 }

@@ -1,4 +1,4 @@
-import { Compilation } from "./compilation";
+import { Compilation } from "./codegen";
 
 /**
  * This process extracts all string literals from the program, adding them to the string constant table, and place

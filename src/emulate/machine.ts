@@ -9,8 +9,44 @@ export class Machine {
     cc: "N" | "Z" | "P" = "Z";
     traps: Map<number, () => void> = new Map();
     running: boolean = false;
+    private stdout: string[] = [];
+    private stdin: string[] = [];
 
     constructor() {
+        const read = () => {
+            const c = this.stdin[0];
+            if (!c) throw `EOF: Input ended`;
+            this.reg[0] = c.charCodeAt(0) & 65535;
+            this.stdin.shift();
+        };
+
+        // GETC & IN
+        this.bindTrap(0x20, read);
+        this.bindTrap(0x23, read);
+
+        // OUT
+        this.bindTrap(0x21, () => {
+            const a = this.reg[0] & 0xff;
+            this.stdout.push(String.fromCharCode(a));
+        });
+
+        // PUTS
+        this.bindTrap(0x22, () => {
+            let addr = this.reg[0];
+            while (true) {
+                const c = this.readMemory(addr);
+                if (c == 0) break;
+                this.stdout.push(String.fromCharCode(c));
+                addr++;
+            }
+        });
+
+        // PUTSP
+        this.bindTrap(0x24, () => {
+            throw `RE: PUTSP is not implemented`;
+        });
+
+        // HALT
         this.bindTrap(0x25, () => this.running = false);
     }
 
@@ -50,6 +86,21 @@ export class Machine {
         this.memory.set(addr, value);
     }
 
+
+    /**
+     * Gets the content of stdout.
+     */
+    getOutput(): string {
+        return this.stdout.join("");
+    }
+
+    /**
+     * Sets the content of stdin.
+     */
+    setInput(content: string) {
+        this.stdin = content.split("");
+    }
+
     /**
      * Copies the array into memory.
      */
@@ -86,29 +137,25 @@ export class Machine {
     }
 
     /**
-     * Runs until HALT asynchronously.
-     */
-    runAsync(): Promise<void> {
-        return new Promise(res => {
-            this.running = true;
-            const t = setInterval(() => {
-                this.runStep();
-                if (!this.running) {
-                    clearInterval(t);
-                    res();
-                }
-            });
-        });
-    }
-
-    /**
      * Runs until HALT synchronously.
      */
-    run() {
+    run(limit: number = -1): RunResult {
         this.running = true;
         while (this.running) {
-            this.runStep();
+            if (limit == 0) {
+                return "TLE";
+            }
+            try {
+                this.runStep();
+            } catch (e) {
+                const ex = String(e);
+                if (ex.startsWith("RE")) return "RE";
+                if (ex.startsWith("EOF")) return "EOF";
+            }
+
+            limit--;
         }
+        return "OK";
     }
 
     /**
@@ -127,10 +174,15 @@ export class Machine {
 
                 if (instr[10] == "0") {
                     const sr2 = this.toRegister(instr.slice(13));
-                    this.doAddR(dr, sr1, sr2);
+                    const a = this.toSigned(this.reg[sr1]);
+                    const b = this.toSigned(this.reg[sr2]);
+                    this.reg[dr] = this.toUnsigned(a + b);
+                    this.setCond(this.reg[dr]);
                 } else {
                     const imm5 = this.toImm(instr.slice(11), 5);
-                    this.doAddI(dr, sr1, imm5);
+                    const a = this.toSigned(this.reg[sr1]);
+                    this.reg[dr] = this.toUnsigned(a + imm5);
+                    this.setCond(this.reg[dr]);
                 }
 
                 break;
@@ -143,10 +195,12 @@ export class Machine {
 
                 if (instr[10] == "0") {
                     const sr2 = this.toRegister(instr.slice(13));
-                    this.doAndR(dr, sr1, sr2);
+                    this.reg[dr] = this.reg[sr1] & this.reg[sr2];
+                    this.setCond(this.reg[dr]);
                 } else {
                     const imm5 = this.toImm(instr.slice(11), 5);
-                    this.doAndI(dr, sr1, imm5);
+                    this.reg[dr] = this.reg[sr1] & this.toUnsigned(imm5);
+                    this.setCond(this.reg[dr]);
                 }
 
                 break;
@@ -157,6 +211,9 @@ export class Machine {
                 const n = instr[4] == "1";
                 const z = instr[5] == "1";
                 const p = instr[6] == "1";
+                if (!n && !z && !p) {
+                    throw `RE: Invalid BR instruction (zero value executed?)`;
+                }
                 if (n && this.cc == "N" || z && this.cc == "Z" || p && this.cc == "P") {
                     const offset = this.toImm(instr.slice(7), 9);
                     this.pc += offset;
@@ -270,7 +327,7 @@ export class Machine {
 
             // Reserved
             case "1101": {
-                throw "RE: Illegal instruction 1101";
+                throw "RE: Invalid instruction 1101 (reserved)";
             }
         }
     }
@@ -280,7 +337,6 @@ export class Machine {
         if (n > 0) this.cc = "P";
         else if (n == 0) this.cc = "Z";
         else if (n < 0) this.cc = "N";
-        console.log(`CC: ${this.cc}`);
     }
 
     private toRegister(s: string): number {
@@ -304,30 +360,6 @@ export class Machine {
         }
     }
 
-
-    private doAddR(dr: number, sr1: number, sr2: number) {
-        const a = this.toSigned(this.reg[sr1]);
-        const b = this.toSigned(this.reg[sr2]);
-        this.reg[dr] = this.toUnsigned(a + b);
-        this.setCond(this.reg[dr]);
-    }
-
-    private doAddI(dr: number, sr1: number, imm: number) {
-        const a = this.toSigned(this.reg[sr1]);
-        this.reg[dr] = this.toUnsigned(a + imm);
-        this.setCond(this.reg[dr]);
-    }
-
-    private doAndR(dr: number, sr1: number, sr2: number) {
-        this.reg[dr] = this.reg[sr1] & this.reg[sr2];
-        this.setCond(this.reg[dr]);
-    }
-
-    private doAndI(dr: number, sr1: number, imm: number) {
-        this.reg[dr] = this.reg[sr1] & this.toUnsigned(imm);
-        this.setCond(this.reg[dr]);
-    }
-
     private toSigned(i: number): number {
         if (i >= 0 && i <= 32767) return i;
         return this.coerce(i);
@@ -345,3 +377,14 @@ export class Machine {
         return i;
     }
 }
+
+/**
+ * Represents the result of the execution.
+ *
+ * OK: The program exits with a HALT.
+ * RE: Invalid instruction,
+ * TLE: Time limit exceeded (more than reasonable amount of instructions executed).
+ * EOF: Input ended when reading.
+ * SE: Internal error.
+ */
+export type RunResult = "OK" | "RE" | "TLE" | "EOF" | "SE";
