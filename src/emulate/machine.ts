@@ -58,6 +58,9 @@ export class Machine {
         this.reg.fill(0);
         this.memory.clear();
         this.cc = "Z";
+        this.stdin = [];
+        this.stdout = [];
+        this.running = false;
     }
 
     /**

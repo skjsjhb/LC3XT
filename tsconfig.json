@@ -9,9 +9,7 @@
     "skipLibCheck": true
   },
   "include": [
-    "src"
-  ],
-  "exclude": [
-    "vitest"
+    "src",
+    "drivers"
   ]
 }
