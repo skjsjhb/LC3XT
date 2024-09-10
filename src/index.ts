@@ -3,6 +3,8 @@ import { Worker } from "node:worker_threads";
 import { BenchData } from "./serve/bench";
 import * as path from "node:path";
 import cors from "cors";
+import * as fs from "node:fs";
+import * as https from "node:https";
 
 const app = express();
 app.use(express.json());
@@ -41,6 +43,17 @@ function spawnTest(d: ReqData): Promise<string[]> {
     });
 }
 
-app.listen(7900);
+
+if (fs.existsSync("public.pem")) {
+    console.log("Picking up certificates to create SSL server");
+    const publicKey = fs.readFileSync("public.pem");
+    const privateKey = fs.readFileSync("private.key");
+    https.createServer({
+        key: privateKey,
+        cert: publicKey
+    }, app).listen(7900);
+} else {
+    app.listen(7900);
+}
 
 console.log("Server listening on port 7900");
