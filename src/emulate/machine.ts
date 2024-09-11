@@ -152,6 +152,7 @@ export class Machine {
                 this.runStep();
             } catch (e) {
                 const ex = String(e);
+                console.log(e);
                 if (ex.startsWith("RE")) return "RE";
                 if (ex.startsWith("EOF")) return "EOF";
             }

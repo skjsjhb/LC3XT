@@ -36,7 +36,8 @@ export function bench<T>(
                 bin = assemble(d.source);
         }
         bin = assemble(d.source);
-    } catch {
+    } catch (e) {
+        console.log(e);
         parentPort?.postMessage("CE");
         return;
     }
