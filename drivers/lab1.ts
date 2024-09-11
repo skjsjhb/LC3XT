@@ -1,4 +1,4 @@
-import { bench } from "../src/serve/bench";
+import { bench } from "../src/bench/bench";
 import { nanoid } from "nanoid";
 
 const staticTexts = [

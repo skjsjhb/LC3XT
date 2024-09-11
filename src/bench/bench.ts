@@ -3,6 +3,7 @@ import { workerData, parentPort } from "node:worker_threads";
 import { assemble } from "../assemble/codegen";
 
 export interface BenchData {
+    lang: string;
     source: string;
     properties: Record<string, string>;
 }
@@ -20,6 +21,20 @@ export function bench<T>(
     const d = workerData as BenchData;
     let bin;
     try {
+        switch (d.lang) {
+            case "bin":
+                bin = d.source.split(/\s/i).map(it => it.trim());
+                bin.forEach(line => {
+                    if (line.length != 16) throw "Incorrect machine code length";
+                    line.split("").forEach(i => {
+                        if (i != "0" && i != "1") throw `Machine code may not contain character ${i}`;
+                    });
+                });
+                break;
+            case "asm":
+            default:
+                bin = assemble(d.source);
+        }
         bin = assemble(d.source);
     } catch {
         parentPort?.postMessage("CE");

@@ -1,6 +1,6 @@
 import express from "express";
 import { Worker } from "node:worker_threads";
-import { BenchData } from "./serve/bench";
+import { BenchData } from "./bench/bench";
 import * as path from "node:path";
 import cors from "cors";
 import * as fs from "node:fs";
@@ -12,6 +12,7 @@ app.use(cors());
 
 interface ReqData {
     lab: string;
+    lang: string;
     source: string;
     properties: Record<string, string>;
 }
