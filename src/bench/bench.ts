@@ -23,19 +23,12 @@ export function bench<T>(
     try {
         switch (d.lang) {
             case "bin":
-                bin = d.source.split(/\s/i).map(it => it.trim());
-                bin.forEach(line => {
-                    if (line.length != 16) throw "Incorrect machine code length";
-                    line.split("").forEach(i => {
-                        if (i != "0" && i != "1") throw `Machine code may not contain character ${i}`;
-                    });
-                });
+                bin = d.source.split(/\s/i).map(it => it.trim()).filter(it => it.length > 0);
                 break;
             case "asm":
             default:
                 bin = assemble(d.source);
         }
-        bin = assemble(d.source);
     } catch (e) {
         console.log(e);
         parentPort?.postMessage("CE");
