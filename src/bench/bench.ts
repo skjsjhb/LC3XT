@@ -1,14 +1,12 @@
 import { Machine } from "../emulate/machine";
 import { workerData, parentPort } from "node:worker_threads";
 import { assemble } from "../assemble/codegen";
+import { BenchRequest, BenchUnitResult, BenchResult } from "../api/types";
 
-export interface BenchData {
-    lang: string;
-    source: string;
-    properties: Record<string, string>;
+interface BenchWorkerData {
+    id: string;
+    request: BenchRequest;
 }
-
-export type BenchResult = "AC" | "WA" | "CE" | "EE" | "RE" | "TLE" | "EOF" | "SE";
 
 /**
  * Starts the bench process.
@@ -16,29 +14,51 @@ export type BenchResult = "AC" | "WA" | "CE" | "EE" | "RE" | "TLE" | "EOF" | "SE
  */
 export function bench<T>(
     cases: T[],
-    exec: (cas: T, m: Machine, properties: Record<string, string>) => BenchResult
+    preflight: (env: Record<string, string>) => boolean,
+    exec: (cas: T, m: Machine, env: Record<string, string>) => BenchUnitResult
 ) {
-    const d = workerData as BenchData;
+    const wd = workerData as BenchWorkerData;
+
+    const result: BenchResult = {
+        id: wd.id,
+        time: new Date().getTime(),
+        error: null,
+        units: [],
+        request: wd.request
+    };
+
+    const req = wd.request;
+
     let bin;
     try {
-        switch (d.lang) {
+        switch (req.language) {
             case "bin":
-                bin = d.source.split(/\s/i).map(it => it.trim()).filter(it => it.length > 0);
+                bin = req.source.split(/\s/i).map(it => it.trim()).filter(it => it.length > 0);
                 break;
             case "asm":
             default:
-                bin = assemble(d.source);
+                bin = assemble(req.source);
         }
     } catch (e) {
         console.log(e);
-        parentPort?.postMessage("CE");
+        result.error = "CE";
+        parentPort?.postMessage(result);
+        return;
+    }
+
+    if (!preflight(req.env)) {
+        result.error = "EE";
+        parentPort?.postMessage(result);
         return;
     }
 
     for (const c of cases) {
         const m = new Machine();
         m.loadProgram(bin);
-        const st = exec(c, m, d.properties);
-        parentPort?.postMessage(st);
+        const st = exec(c, m, req.env);
+        result.units.push(st);
     }
+
+    parentPort?.postMessage(result);
+    return;
 }

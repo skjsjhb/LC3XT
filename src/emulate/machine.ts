@@ -1,3 +1,15 @@
+/**
+ * Statistics of the machine.
+ */
+export interface MachineStat {
+    memRead: number;
+    memWrite: number;
+    instCount: number;
+}
+
+/**
+ * Minimum LC-3 virtual machine.
+ */
 export class Machine {
     pc: number = 0x3000;
 
@@ -9,13 +21,19 @@ export class Machine {
     cc: "N" | "Z" | "P" = "Z";
     traps: Map<number, () => void> = new Map();
     running: boolean = false;
+
+    private status: MachineStat = {
+        memRead: 0,
+        memWrite: 0,
+        instCount: 0
+    };
     private stdout: string[] = [];
     private stdin: string[] = [];
 
     constructor() {
         const read = () => {
             const c = this.stdin[0];
-            if (!c) throw `EOF: Input ended`;
+            if (!c) throw `RE: Input ended`;
             this.reg[0] = c.charCodeAt(0) & 65535;
             this.stdin.shift();
         };
@@ -51,22 +69,17 @@ export class Machine {
     }
 
     /**
-     * Reset the machine.
+     * Gets the machine status.
      */
-    reset() {
-        this.pc = 0x3000;
-        this.reg.fill(0);
-        this.memory.clear();
-        this.cc = "Z";
-        this.stdin = [];
-        this.stdout = [];
-        this.running = false;
+    getStatus(): MachineStat {
+        return this.status;
     }
 
     /**
      * Reads the memory.
      */
     readMemory(addr: number): number {
+        this.status.memRead++;
         if (addr < 0 || addr > 0xffff) {
             return 0;
         }
@@ -85,6 +98,7 @@ export class Machine {
      * Sets the memory, ignoring privilege.
      */
     setMemory(addr: number, value: number) {
+        this.status.memWrite++;
         if (addr < 0 || addr > 0xffff) return;
         this.memory.set(addr, value);
     }
@@ -142,24 +156,24 @@ export class Machine {
     /**
      * Runs until HALT synchronously.
      */
-    run(limit: number = -1): RunResult {
+    run(limit: number = -1): [RunResult, string] {
+        const originalLimit = limit;
         this.running = true;
         while (this.running) {
             if (limit == 0) {
-                return "TLE";
+                return ["TLE", "Time limit exceeded " + originalLimit];
             }
             try {
                 this.runStep();
             } catch (e) {
                 const ex = String(e);
                 console.log(e);
-                if (ex.startsWith("RE")) return "RE";
-                if (ex.startsWith("EOF")) return "EOF";
+                if (ex.startsWith("RE")) return ["RE", ex];
             }
 
             limit--;
         }
-        return "OK";
+        return ["OK", ""];
     }
 
     /**
@@ -169,6 +183,9 @@ export class Machine {
         const instrNum = this.readMemory(this.pc);
         this.pc++;
         const instr = instrNum.toString(2).padStart(16, "0");
+
+        this.status.instCount++;
+
         const opcode = instr.slice(0, 4);
         switch (opcode) {
             // ADD
@@ -391,4 +408,4 @@ export class Machine {
  * EOF: Input ended when reading.
  * SE: Internal error.
  */
-export type RunResult = "OK" | "RE" | "TLE" | "EOF" | "SE";
+export type RunResult = "OK" | "RE" | "TLE" | "SE";

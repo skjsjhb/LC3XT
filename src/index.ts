@@ -1,60 +1,88 @@
 import express from "express";
 import { Worker } from "node:worker_threads";
-import { BenchData } from "./bench/bench";
 import * as path from "node:path";
 import cors from "cors";
-import * as fs from "node:fs";
-import * as https from "node:https";
+import { dbInit, addRecord, getRecord } from "./db/db";
+import { customAlphabet } from "nanoid";
+import { BenchRequest, BenchResult } from "./api/types";
+
+const port = 7900;
+
+dbInit();
 
 const app = express();
 app.use(express.json());
 app.use(cors());
 
-interface ReqData {
-    lab: string;
-    lang: string;
-    source: string;
-    properties: Record<string, string>;
-}
+const allowedLabIds = [
+    "lab1"
+];
 
-app.post("/oj", async (req, res) => {
-    const r = req.body as ReqData;
-    console.log(`Received request for '${r.lab}', code length ${r.source.length}`);
-    try {
-        const st = await spawnTest(r);
-        res.status(200).json(st).end();
-    } catch (e) {
-        res.status(500).send(e).end();
+const pendingIds = new Set<string>();
+
+const nanoid = customAlphabet("0123456789", 9);
+
+app.get("/oj/record/:id", async (req, res) => {
+    const id = req.params.id;
+    if (pendingIds.has(id)) {
+        res.status(204).end();
+    } else {
+        const rec = getRecord(id);
+        if (rec == null) {
+            res.status(404).end();
+        } else {
+            res.status(200).send(JSON.stringify(rec)).end();
+        }
     }
 });
 
-function spawnTest(d: ReqData): Promise<string[]> {
-    const wk = new Worker(path.join(__dirname, `./${d.lab}.cjs`), {
-        workerData: {
-            ...d
-        } satisfies BenchData
+app.post("/oj/new", (req, res) => {
+    const r = req.body as BenchRequest;
+    console.log(`Received request for '${r.labId}', code length ${r.source.length}`);
+
+    if (!allowedLabIds.includes(r.labId)) {
+        res.status(400).send("Invalid lab ID").end();
+        return;
+    }
+
+    if (!checkRequest(r)) {
+        res.status(400).send("Malformed request body").end();
+        return;
+    }
+
+    const id = "A" + nanoid();
+    res.status(201).send(id).end();
+
+    spawnTest(id, r);
+});
+
+function checkRequest(d: any): boolean {
+    return [
+        typeof d.labId === "string",
+        typeof d.source === "string",
+        typeof d.language === "string",
+        typeof d.env === "object" && !Array.isArray(d.env) && Object.values(d.env).every(it => typeof it === "string")
+    ].every(Boolean);
+}
+
+function spawnTest(id: string, benchInit: BenchRequest) {
+    pendingIds.add(id);
+
+    const wk = new Worker(path.join(__dirname, `./${benchInit.labId}.cjs`), {
+        workerData: { id, request: benchInit }
     });
 
-    const out: string[] = [];
+    wk.on("message", (s: BenchResult) => {
+        console.log(`Created new record ${s.id}`);
+        addRecord(s);
+    });
 
-    return new Promise((res, rej) => {
-        wk.on("error", (e) => {rej(e);});
-        wk.on("message", (s) => {out.push(s);});
-        wk.on("exit", () => {res(out);});
+    wk.on("exit", () => {
+        pendingIds.delete(id);
     });
 }
 
 
-if (fs.existsSync("public.pem")) {
-    console.log("Picking up certificates to create SSL server");
-    const publicKey = fs.readFileSync("public.pem");
-    const privateKey = fs.readFileSync("private.key");
-    https.createServer({
-        key: privateKey,
-        cert: publicKey
-    }, app).listen(7900);
-} else {
-    app.listen(7900);
-}
+app.listen(port);
 
-console.log("Server listening on port 7900");
+console.log(`Server listening on port ${port}`);

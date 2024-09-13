@@ -9,5 +9,6 @@ await esbuild.build({
     minify: true,
     outdir: "dist",
     platform: "node",
+    external: ["better-sqlite3"],
     outExtension: { ".js": ".cjs" }
 });
