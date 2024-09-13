@@ -2,6 +2,7 @@ import esbuild from "esbuild";
 
 await esbuild.build({
     entryPoints: {
+        "hello": "drivers/hello.ts",
         "lab1": "drivers/lab1.ts",
         "index": "src/index.ts"
     },
