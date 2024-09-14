@@ -91,7 +91,7 @@ export class Machine {
     constructor() {
         const read = () => {
             const c = this.stdin[0];
-            if (!c) throw `RE: 没有可供读取的输入了`;
+            if (!c) throw `RE: 程序请求输入，但没有更多输入可供读取了`;
             this.reg[0] = c.charCodeAt(0) & 65535;
             this.stdin.shift();
         };
@@ -156,13 +156,13 @@ export class Machine {
     readMemory(addr: number, asInstr: boolean = false): number {
         this.status.memRead++;
         if (addr < 0 || addr > 0xffff) {
-            throw `RE: ${printHex(addr)} 地址无效`;
+            throw `RE: 内存地址 ${printHex(addr)} 无效`;
         }
         if (addr < 0x3000 && this.psr.mode == 1) {
-            throw `RE: 试图在用户模式下访问 ${printHex(addr)} 处的内存`;
+            throw `RE: 不能在用户模式下访问系统专用的内存地址 ${printHex(addr)}`;
         }
         if (asInstr && !this.memory.get(addr)) {
-            throw `RE: 试图从未加载的内存 ${printHex(addr)} 中读取指令（可能是缺少 HALT 或者跳转错误）`;
+            throw `RE: 不能从未加载的内存地址 ${printHex(addr)} 中读取指令（可能是缺少 HALT 或者跳转错误）`;
         }
         return this.memory.get(addr) || 0;
     }
@@ -181,10 +181,10 @@ export class Machine {
     setMemory(addr: number, value: number) {
         this.status.memWrite++;
         if (addr < 0 || addr > 0xffff) {
-            throw `RE: ${printHex(addr)} 地址无效`;
+            throw `RE: 内存地址 ${printHex(addr)} 无效`;
         }
         if (addr < 0x3000 && this.psr.mode == 1) {
-            throw `RE: 试图在用户模式下访问 ${printHex(addr)} 处的内存`;
+            throw `RE: 不能在用户模式下访问系统专用的内存地址 ${printHex(addr)}`;
         }
         this.memory.set(addr, value);
     }
@@ -247,7 +247,7 @@ export class Machine {
         this.running = true;
         while (this.running) {
             if (limit == 0) {
-                return ["TLE", `指令数超出了 ${originalLimit} 的限制`];
+                return ["TLE", `TLE: 指令数超出了 ${originalLimit} 条的限制`];
             }
             try {
                 this.runStep();
