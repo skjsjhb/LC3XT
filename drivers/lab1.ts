@@ -2,7 +2,6 @@ import { bench } from "../src/bench/bench";
 import { nanoid } from "nanoid";
 import { Machine } from "../src/emulate/machine";
 import { BenchUnitResult } from "../src/api/types";
-import { VERSION } from "../src/api/version";
 
 const staticTexts = [
     "hello, world...",
@@ -38,8 +37,7 @@ function test(item: string, m: Machine, env: Record<string, string>): BenchUnitR
             received: ""
         },
         time: new Date().getTime(),
-        stat: m.getStatus(),
-        version: VERSION + " (Lab 1)"
+        stat: m.getStatus()
     };
 
     const stuId = env["stuId"];
@@ -75,13 +73,13 @@ function test(item: string, m: Machine, env: Record<string, string>): BenchUnitR
 
 
     if (mismatchedId < 0) {
-        result.message = "OK accepted.";
+        result.message = "测试通过";
         result.code = "AC";
     } else {
         const mismatchedAddr = 0x3200 + mismatchedId;
         const exp = printHex(expected[mismatchedId]);
         const rcv = printHex(out[mismatchedId]);
-        result.message = `Wrong answer at ${printHex(mismatchedAddr)}: expecting ${exp}, received ${rcv}`;
+        result.message = `答案错误，需要地址 ${printHex(mismatchedAddr)} 上的值是 ${exp} 但读出的值是 ${rcv}`;
         result.code = "WA";
     }
 

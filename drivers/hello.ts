@@ -1,7 +1,6 @@
 import { bench } from "../src/bench/bench";
 import { Machine } from "../src/emulate/machine";
 import { BenchUnitResult } from "../src/api/types";
-import { VERSION } from "../src/api/version";
 
 
 function test(_: number, m: Machine, __: Record<string, string>): BenchUnitResult {
@@ -14,8 +13,7 @@ function test(_: number, m: Machine, __: Record<string, string>): BenchUnitResul
             received: ""
         },
         time: new Date().getTime(),
-        stat: m.getStatus(),
-        version: VERSION + " (Hello)"
+        stat: m.getStatus()
     };
 
     const [res, msg] = m.run(10000);
@@ -34,14 +32,14 @@ function test(_: number, m: Machine, __: Record<string, string>): BenchUnitResul
     const out = m.getOutput().trim();
 
     const passed = out === "hello, world";
-    
+
     result.io.received = out;
 
     if (passed) {
-        result.message = "OK accepted.";
+        result.message = "测试通过";
         result.code = "AC";
     } else {
-        result.message = `Wrong answer, expecting 'hello, world' but received '${out}'`;
+        result.message = `答案错误，需要 'hello, world' 但读出的值是 '${out}'`;
         result.code = "WA";
     }
 

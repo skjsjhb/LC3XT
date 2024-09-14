@@ -81,9 +81,6 @@ function spawnTest(id: string, benchInit: BenchRequest) {
     });
 }
 
-
-createId();
-
 app.listen(port);
 
 console.log(`Server listening on port ${port}`);

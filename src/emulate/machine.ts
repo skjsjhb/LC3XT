@@ -1,3 +1,5 @@
+import { assemble } from "../assemble/codegen";
+
 /**
  * Statistics of the machine.
  */
@@ -7,18 +9,74 @@ export interface MachineStat {
     instCount: number;
 }
 
+const conditionCode = {
+    N: 0b100,
+    Z: 0b010,
+    P: 0b001
+};
+
+export class PSRState {
+    cc: "N" | "Z" | "P" = "Z";
+    priority: number = 7;
+    mode: 0 | 1 = 0; // 0: Supervisor, 1: User
+
+    toNumber(): number {
+        return (this.mode << 15) + (this.priority << 8) + conditionCode[this.cc];
+    }
+
+    fromNumber(a: number) {
+        const code = a & 0b111;
+        switch (code) {
+            case 0b100:
+                this.cc = "N";
+                break;
+            case 0b010:
+                this.cc = "Z";
+                break;
+            case 0b001:
+                this.cc = "P";
+                break;
+        }
+        if (a & (1 << 15)) {
+            this.mode = 1;
+        } else {
+            this.mode = 0;
+        }
+        this.priority = a >> 8 & 0b111;
+    }
+}
+
+
+const OS_CODE = `
+.ORIG x200
+LD R0, PSR
+ADD R6, R6, x-1
+STR R0, R6, x0
+LD R0, BOOT
+ADD R6, R6, x-1
+STR R0, R6, x0
+AND R0, R0, x0
+RTI
+PSR .FILL x8000
+BOOT .FILL x3000
+.END
+`;
+
 /**
  * Minimum LC-3 virtual machine.
  */
 export class Machine {
-    pc: number = 0x3000;
+    pc: number = 0x200;
+    psr = new PSRState();
+
+    ssp: number = 0x2fff; // Saved SSP
+    usp: number = 0xfdff; // Saved USP
 
     // All registers here are non-negative unsigned numbers
     // Signed operations are converted before executed
     reg: number[] = Array(8).fill(0);
 
     memory: Map<number, number> = new Map();
-    cc: "N" | "Z" | "P" = "Z";
     traps: Map<number, () => void> = new Map();
     running: boolean = false;
 
@@ -33,7 +91,7 @@ export class Machine {
     constructor() {
         const read = () => {
             const c = this.stdin[0];
-            if (!c) throw `RE: Input ended`;
+            if (!c) throw `RE: 没有可供读取的输入了`;
             this.reg[0] = c.charCodeAt(0) & 65535;
             this.stdin.shift();
         };
@@ -61,11 +119,28 @@ export class Machine {
 
         // PUTSP
         this.bindTrap(0x24, () => {
-            throw `RE: PUTSP is not implemented`;
+            let addr = this.reg[0];
+            while (true) {
+                const bc = this.readMemory(addr);
+                const bl = bc & 0xff;
+                const bh = (bc >> 8) & 0xff;
+                if (bl == 0) break;
+                this.stdout.push(String.fromCharCode(bl));
+                if (bh == 0) break;
+                this.stdout.push(String.fromCharCode(bh));
+                addr++;
+            }
         });
 
         // HALT
         this.bindTrap(0x25, () => this.running = false);
+
+        // Load initial SSP
+        this.reg[6] = this.ssp;
+
+        // Assemble and load OS code
+        const [os] = assemble(OS_CODE);
+        this.loadProgram([os.origin].concat(os.code));
     }
 
     /**
@@ -81,7 +156,10 @@ export class Machine {
     readMemory(addr: number): number {
         this.status.memRead++;
         if (addr < 0 || addr > 0xffff) {
-            return 0;
+            throw `RE: ${printHex(addr)} 地址无效`;
+        }
+        if (addr < 0x3000 && this.psr.mode == 1) {
+            throw `RE: 试图在用户模式下访问 ${printHex(addr)} 处的内存`;
         }
         return this.memory.get(addr) || 0;
     }
@@ -99,8 +177,17 @@ export class Machine {
      */
     setMemory(addr: number, value: number) {
         this.status.memWrite++;
-        if (addr < 0 || addr > 0xffff) return;
-        this.memory.set(addr, value);
+        if (addr < 0 || addr > 0xffff) {
+            throw `RE: ${printHex(addr)} 地址无效`;
+        }
+        if (addr < 0x3000 && this.psr.mode == 1) {
+            throw `RE: 试图在用户模式下访问 ${printHex(addr)} 处的内存`;
+        }
+        if (value != 0) {
+            this.memory.set(addr, value);
+        } else {
+            this.memory.delete(addr);
+        }
     }
 
 
@@ -144,7 +231,7 @@ export class Machine {
      */
     loadProgram(code: string[]) {
         code = code.concat();
-        if (code.length < 1) throw `RE: Empty program`;
+        if (code.length < 1) throw `RE: 无法装载空白程序`;
         let entry = parseInt(code[0], 2);
         code.shift();
         for (const c of code) {
@@ -161,7 +248,7 @@ export class Machine {
         this.running = true;
         while (this.running) {
             if (limit == 0) {
-                return ["TLE", "Time limit exceeded " + originalLimit];
+                return ["TLE", `指令数超出了 ${originalLimit} 的限制`];
             }
             try {
                 this.runStep();
@@ -183,7 +270,6 @@ export class Machine {
         const instrNum = this.readMemory(this.pc);
         this.pc++;
         const instr = instrNum.toString(2).padStart(16, "0");
-
         this.status.instCount++;
 
         const opcode = instr.slice(0, 4);
@@ -233,9 +319,9 @@ export class Machine {
                 const z = instr[5] == "1";
                 const p = instr[6] == "1";
                 if (!n && !z && !p) {
-                    throw `RE: Invalid BR instruction (zero value executed?)`;
+                    throw `RE: 无效的 BR 指令（当前程序地址 ${printHex(this.pc - 1)} 似乎不是代码）`;
                 }
-                if (n && this.cc == "N" || z && this.cc == "Z" || p && this.cc == "P") {
+                if (n && this.psr.cc == "N" || z && this.psr.cc == "Z" || p && this.psr.cc == "P") {
                     const offset = this.toImm(instr.slice(7), 9);
                     this.pc += offset;
                 }
@@ -308,8 +394,18 @@ export class Machine {
 
             // RTI
             case "1000": {
-                // TODO this will be implemented using internal methods instead of the switching mechanism
-                // Currently we simply ignore it
+                if (this.psr.mode == 1) {
+                    throw `RE: 不能在用户模式下执行 RTI 指令`;
+                }
+                this.pc = this.pop();
+                const temp = this.pop();
+                this.psr.fromNumber(temp);
+
+                // @ts-ignore There are side effects
+                if (this.psr.mode == 1) {
+                    this.ssp = this.reg[6];
+                    this.reg[6] = this.usp;
+                }
                 break;
             }
 
@@ -341,33 +437,63 @@ export class Machine {
             // TRAP
             case "1111": {
                 const vec = parseInt(instr.slice(8), 2);
-                const f = this.traps.get(vec);
-                f?.();
+                this.callTrap(vec);
                 break;
             }
 
             // Reserved
             case "1101": {
-                throw "RE: Invalid instruction 1101 (reserved)";
+                throw "RE: 指令 1101 无效";
             }
         }
     }
 
+    private callTrap(vec: number) {
+        const f = this.traps.get(vec);
+        if (f) {
+            // Native TRAP table
+            f();
+        } else {
+            // Call TRAP routine
+            const temp = this.psr.toNumber();
+            if (this.psr.mode == 1) {
+                this.usp = this.reg[6];
+                this.reg[6] = this.ssp;
+                this.psr.mode = 0;
+            }
+
+            this.push(temp);
+            this.push(this.pc);
+            this.pc = this.readMemory(vec);
+        }
+    }
+
+    private push(a: number) {
+        this.reg[6]--;
+        this.setMemory(this.reg[6], a);
+    }
+
+    private pop(): number {
+        const t = this.readMemory(this.reg[6]);
+        this.reg[6]++;
+        return t;
+    }
+
     private setCond(o: number) {
         const n = this.toSigned(o);
-        if (n > 0) this.cc = "P";
-        else if (n == 0) this.cc = "Z";
-        else if (n < 0) this.cc = "N";
+        if (n > 0) this.psr.cc = "P";
+        else if (n == 0) this.psr.cc = "Z";
+        else if (n < 0) this.psr.cc = "N";
     }
 
     private toRegister(s: string): number {
         const d = parseInt(s, 2);
-        if (d < 0 || d > 7) throw `RE: Invalid register ${s}`;
+        if (d < 0 || d > 7) throw `RE: 没有名为 ${s} 的寄存器`;
         return d;
     }
 
     private toImm(s: string, bits: number, sext: boolean = true): number {
-        if (s.length != bits) throw `RE: Invalid immediate ${s} for ${bits} bits`;
+        if (s.length != bits) throw `RE: 立即数 ${s} 不能编码为 ${bits} 位`;
 
         // Pad to 16
         const sign = sext ? s[0] : "0";
@@ -399,13 +525,9 @@ export class Machine {
     }
 }
 
-/**
- * Represents the result of the execution.
- *
- * OK: The program exits with a HALT.
- * RE: Invalid instruction,
- * TLE: Time limit exceeded (more than reasonable amount of instructions executed).
- * EOF: Input ended when reading.
- * SE: Internal error.
- */
+function printHex(n: number): string {
+    return "x" + n.toString(16).padStart(4, "0");
+}
+
+
 export type RunResult = "OK" | "RE" | "TLE" | "SE";

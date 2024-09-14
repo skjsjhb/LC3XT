@@ -9,6 +9,12 @@ export interface Unit {
     args: string[];
 }
 
+export interface Program {
+    // The load address
+    origin: string;
+    code: string[];
+}
+
 
 const descriptors = [
     ["ADD", 3],
@@ -63,11 +69,6 @@ const ops = new Set([...descriptors.map(it => it[0])]) as Set<string>;
  */
 export interface Compilation {
     /**
-     * The symbol table.
-     */
-    symbols: Map<string, number>;
-
-    /**
      * The string constant table.
      */
     strings: Map<number, string>;
@@ -111,20 +112,20 @@ export function tokenize(comp: Compilation): Unit[] {
 
         const argc = descriptors.find(it => it[0] == opr)?.[1];
         if (typeof argc !== "number") {
-            throw `CE: Unknown instruction ${opr}`;
+            throw `CE: 未知指令 ${opr}`;
         }
 
         const args = [];
         for (let i = 0; i < argc; i++) {
             const a = tokens.shift();
             if (!a) {
-                throw `CE: Unmatched operands, expecting ${argc} for ${opr}`;
+                throw `CE: 缺少操作数，${opr} 指令需要 ${argc} 个`;
             }
 
             // It's more common that an argument was missed
             // This can avoid messing up the entire program
             if (ops.has(a)) {
-                throw `CE: Unexpected instruction ${a} when collecting args for ${opr}`;
+                throw `CE: 需要 ${opr} 的操作数，却意外发现了指令 ${a}`;
             }
             args.push(a);
         }
@@ -138,11 +139,12 @@ export function tokenize(comp: Compilation): Unit[] {
     return units;
 }
 
-export function buildSymbolTable(comp: Compilation, units: Unit[]) {
+export function buildSymbolTable(comp: Compilation, units: Unit[]): Map<string, number> {
     let pos = 0;
+    const symbols = new Map<string, number>();
     for (const u of units) {
         if (u.labels) {
-            u.labels.forEach(lb => comp.symbols.set(lb, pos));
+            u.labels.forEach(lb => symbols.set(lb, pos));
         }
         switch (u.name) {
             case ".ORIG":
@@ -160,6 +162,7 @@ export function buildSymbolTable(comp: Compilation, units: Unit[]) {
                 pos += 1;
         }
     }
+    return symbols;
 }
 
 function isRegister(a: string): boolean {
@@ -167,9 +170,9 @@ function isRegister(a: string): boolean {
 }
 
 function toRegister(a: string): string {
-    if (!a.startsWith("R")) throw `CE: Expecting register, received ${a}`;
+    if (!a.startsWith("R")) throw `CE: ${a} 不是一个寄存器`;
     const rid = parseInt(a.slice(1));
-    if (rid < 0 || rid > 7) throw `CE: Invalid register ${a}`;
+    if (rid < 0 || rid > 7) throw `CE: ${a} 不是一个寄存器`;
     return rid.toString(2).padStart(3, "0");
 }
 
@@ -178,7 +181,7 @@ function toComplement(s: number, bits: number): string {
         const st = s.toString(2);
         if (st.length >= bits) {
             // As a positive number, the MSB must be 0, or the interpreter will treat it as a negative number
-            throw `CE: Number ${s} does not fit into ${bits} bits`;
+            throw `CE: 立即数 ${s} 不能编码为 ${bits} 位（很可能是过大或过小）`;
         }
         return st.padStart(bits, "0");
     } else {
@@ -186,15 +189,15 @@ function toComplement(s: number, bits: number): string {
         const st = (neg).toString(2);
         if (st.length < bits || st.startsWith("-")) {
             // The output begins with a zero, also misinterpreted
-            throw `CE: Number ${s} does not fit into ${bits} bits`;
+            throw `CE: 立即数 ${s} 不能编码为 ${bits} 位（很可能是过大或过小）`;
         }
         return st;
     }
 }
 
-function getLabelOffset(comp: Compilation, pos: number, target: string, bits: number): string {
-    const localAddr = comp.symbols.get(target);
-    if (localAddr === undefined) throw `CE: Undefined label ${target}`;
+function getLabelOffset(symbols: Map<string, number>, pos: number, target: string, bits: number): string {
+    const localAddr = symbols.get(target);
+    if (localAddr === undefined) throw `CE: 未知的标签 ${target}`;
     const diff = localAddr - (pos + 1);
     return toComplement(diff, bits);
 }
@@ -204,15 +207,14 @@ function toNumber(a: string, bits: number, complement: boolean = true): string {
     if (a.startsWith("X")) {
         base = 16;
     } else if (!a.startsWith("#")) {
-        throw `CE: Number literal should begin with either x or #: ${a}`;
+        throw `CE: 数字应当以 x 或 # 开头，无法读取 ${a}`;
     }
-    a = a.slice(1);
-    const n = parseInt(a, base);
+    const n = parseInt(a.slice(1), base);
     if (complement) {
         return toComplement(n, bits);
     } else {
         const out = n.toString(2).padStart(bits, "0");
-        if (out.length > bits) throw `CE: Number ${a} does not fit into ${bits} bits `;
+        if (out.length > bits) throw `CE: 立即数 ${a} 不能编码为 ${bits} 位（很可能是过大或过小）`;
         return out;
     }
 }
@@ -226,12 +228,28 @@ function createBR(name: string, offset: string) {
     return `0000${n}${z}${p}${offset}`;
 }
 
-export function buildBinary(comp: Compilation, units: Unit[]): string[] {
+export function splitUnits(units: Unit[]): Unit[][] {
+    const out = [];
+    let buf = [];
+    for (const u of units) {
+        buf.push(u);
+        if (u.name == ".END") {
+            out.push(buf);
+            buf = [];
+        }
+    }
+    if (buf.length > 0) {
+        out.push(buf);
+    }
+    return out;
+}
+
+export function buildBinary(comp: Compilation, symbols: Map<string, number>, units: Unit[]): Program {
     const out: string[] = [];
     let origin: string = "0011000000000000";
     for (const u of units) {
         if (u.name.startsWith("BR")) {
-            const offset = getLabelOffset(comp, out.length, u.args[0], 9);
+            const offset = getLabelOffset(symbols, out.length, u.args[0], 9);
             out.push(createBR(u.name, offset));
             continue;
         }
@@ -253,7 +271,7 @@ export function buildBinary(comp: Compilation, units: Unit[]): string[] {
         if (u.name == ".STRINGZ") {
             const sid = parseInt(u.args[0]);
             const str = comp.strings.get(sid);
-            if (str === undefined) throw `CE: Internal string table error`;
+            if (str === undefined) throw `CE: 汇编器内部字符表错误`;
             for (let i = 0; i < str.length; i++) {
                 const code = str.charCodeAt(i);
                 const line = code.toString(2).padStart(16, "0");
@@ -317,7 +335,7 @@ export function buildBinary(comp: Compilation, units: Unit[]): string[] {
             }
 
             case "JSR": {
-                const offset = getLabelOffset(comp, out.length, u.args[0], 11);
+                const offset = getLabelOffset(symbols, out.length, u.args[0], 11);
                 s = `01001${offset}`;
                 break;
             }
@@ -330,28 +348,28 @@ export function buildBinary(comp: Compilation, units: Unit[]): string[] {
 
             case "LD": {
                 const dr = toRegister(u.args[0]);
-                const offset = getLabelOffset(comp, out.length, u.args[1], 9);
+                const offset = getLabelOffset(symbols, out.length, u.args[1], 9);
                 s = `0010${dr}${offset}`;
                 break;
             }
 
             case "ST": {
                 const sr = toRegister(u.args[0]);
-                const offset = getLabelOffset(comp, out.length, u.args[1], 9);
+                const offset = getLabelOffset(symbols, out.length, u.args[1], 9);
                 s = `0011${sr}${offset}`;
                 break;
             }
 
             case "LDI": {
                 const dr = toRegister(u.args[0]);
-                const offset = getLabelOffset(comp, out.length, u.args[1], 9);
+                const offset = getLabelOffset(symbols, out.length, u.args[1], 9);
                 s = `1010${dr}${offset}`;
                 break;
             }
 
             case "STI": {
                 const sr = toRegister(u.args[0]);
-                const offset = getLabelOffset(comp, out.length, u.args[1], 9);
+                const offset = getLabelOffset(symbols, out.length, u.args[1], 9);
                 s = `1011${sr}${offset}`;
                 break;
             }
@@ -374,7 +392,7 @@ export function buildBinary(comp: Compilation, units: Unit[]): string[] {
 
             case "LEA": {
                 const dr = toRegister(u.args[0]);
-                const offset = getLabelOffset(comp, out.length, u.args[1], 9);
+                const offset = getLabelOffset(symbols, out.length, u.args[1], 9);
                 s = `1110${dr}${offset}`;
                 break;
             }
@@ -429,25 +447,31 @@ export function buildBinary(comp: Compilation, units: Unit[]): string[] {
         }
     }
 
+    /*
     if (origin) {
         out.unshift(origin);
     }
+    */
 
-    return out;
+    return {
+        origin, code: out
+    };
 }
 
 /**
  * Assembles the program.
  */
-export function assemble(src: string): string[] {
+export function assemble(src: string): Program[] {
     const comp: Compilation = {
         strings: new Map(),
-        symbols: new Map(),
         source: src,
         units: []
     };
     applyHyperProcess(comp);
     const units = tokenize(comp);
-    buildSymbolTable(comp, units);
-    return buildBinary(comp, units);
+    const segments = splitUnits(units);
+    return segments.map(seg => {
+        const symbols = buildSymbolTable(comp, seg);
+        return buildBinary(comp, symbols, seg);
+    });
 }

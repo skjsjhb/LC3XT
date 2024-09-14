@@ -2,6 +2,7 @@ import { Machine } from "../emulate/machine";
 import { workerData, parentPort } from "node:worker_threads";
 import { assemble } from "../assemble/codegen";
 import { BenchRequest, BenchUnitResult, BenchResult } from "../api/types";
+import { VERSION } from "../api/version";
 
 interface BenchWorkerData {
     id: string;
@@ -25,30 +26,25 @@ export function bench<T>(
         error: null,
         message: "",
         units: [],
-        request: wd.request
+        request: wd.request,
+        version: VERSION
     };
 
     const req = wd.request;
 
-    let bin;
+    let bin: string[][];
     try {
         switch (req.language) {
             case "bin":
-                bin = req.source.split(/\s/i).map(it => it.trim()).filter(it => it.length > 0);
+                bin = [req.source.split(/\s/i).map(it => it.trim()).filter(it => it.length > 0)];
                 break;
             case "asm":
-            default:
-                bin = assemble(req.source);
+            default: {
+                const prog = assemble(req.source);
+                bin = prog.map(p => [p.origin].concat(p.code));
+            }
         }
 
-
-        if (bin.length <= 1) {
-            result.message = "CE: Empty program";
-            result.error = "CE";
-            parentPort?.postMessage(result);
-            return;
-        }
-        
     } catch (e) {
         console.log(e);
         result.message = String(e);
@@ -65,7 +61,7 @@ export function bench<T>(
 
     for (const c of cases) {
         const m = new Machine();
-        m.loadProgram(bin);
+        bin.forEach(b => m.loadProgram(b));
         const st = exec(c, m, req.env);
         result.units.push(st);
     }
@@ -73,3 +69,4 @@ export function bench<T>(
     parentPort?.postMessage(result);
     return;
 }
+

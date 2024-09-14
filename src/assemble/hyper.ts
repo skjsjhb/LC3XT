@@ -44,7 +44,7 @@ function translateString(src: string): string {
                     out.push("\"");
                     break;
                 default:
-                    throw `CE: Unknown escape character: \\${c}`;
+                    throw `CE: 转义符 \\${c} 不受支持`;
             }
         } else {
             out.push(c);
