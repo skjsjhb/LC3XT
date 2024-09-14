@@ -153,13 +153,16 @@ export class Machine {
     /**
      * Reads the memory.
      */
-    readMemory(addr: number): number {
+    readMemory(addr: number, asInstr: boolean = false): number {
         this.status.memRead++;
         if (addr < 0 || addr > 0xffff) {
             throw `RE: ${printHex(addr)} 地址无效`;
         }
         if (addr < 0x3000 && this.psr.mode == 1) {
             throw `RE: 试图在用户模式下访问 ${printHex(addr)} 处的内存`;
+        }
+        if (asInstr && !this.memory.get(addr)) {
+            throw `RE: 试图从未加载的内存中读取指令（可能是缺少 HALT 或者跳转错误）`;
         }
         return this.memory.get(addr) || 0;
     }
@@ -183,11 +186,7 @@ export class Machine {
         if (addr < 0x3000 && this.psr.mode == 1) {
             throw `RE: 试图在用户模式下访问 ${printHex(addr)} 处的内存`;
         }
-        if (value != 0) {
-            this.memory.set(addr, value);
-        } else {
-            this.memory.delete(addr);
-        }
+        this.memory.set(addr, value);
     }
 
 
@@ -267,7 +266,7 @@ export class Machine {
      * Executes one instruction.
      */
     runStep() {
-        const instrNum = this.readMemory(this.pc);
+        const instrNum = this.readMemory(this.pc, true);
         this.pc++;
         const instr = instrNum.toString(2).padStart(16, "0");
         this.status.instCount++;
