@@ -23,6 +23,7 @@ export function bench<T>(
         id: wd.id,
         time: new Date().getTime(),
         error: null,
+        message: "",
         units: [],
         request: wd.request
     };
@@ -39,8 +40,18 @@ export function bench<T>(
             default:
                 bin = assemble(req.source);
         }
+
+
+        if (bin.length <= 1) {
+            result.message = "CE: Empty program";
+            result.error = "CE";
+            parentPort?.postMessage(result);
+            return;
+        }
+        
     } catch (e) {
         console.log(e);
+        result.message = String(e);
         result.error = "CE";
         parentPort?.postMessage(result);
         return;

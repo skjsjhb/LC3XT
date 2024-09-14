@@ -2,8 +2,7 @@ import express from "express";
 import { Worker } from "node:worker_threads";
 import * as path from "node:path";
 import cors from "cors";
-import { dbInit, addRecord, getRecord } from "./db/db";
-import { customAlphabet } from "nanoid";
+import { dbInit, addRecord, getRecord, createId } from "./db/db";
 import { BenchRequest, BenchResult } from "./api/types";
 
 const port = 7900;
@@ -21,7 +20,6 @@ const allowedLabIds = [
 
 const pendingIds = new Set<string>();
 
-const nanoid = customAlphabet("0123456789", 9);
 
 app.get("/oj/record/:id", async (req, res) => {
     const id = req.params.id;
@@ -51,7 +49,7 @@ app.post("/oj/new", (req, res) => {
         return;
     }
 
-    const id = "A" + nanoid();
+    const id = createId();
     res.status(201).send(id).end();
 
     spawnTest(id, r);
@@ -83,6 +81,8 @@ function spawnTest(id: string, benchInit: BenchRequest) {
     });
 }
 
+
+createId();
 
 app.listen(port);
 

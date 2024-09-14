@@ -93,6 +93,9 @@ export function tokenize(comp: Compilation): Unit[] {
     while (true) {
         const labels: string[] = [];
         let opr: string = "";
+
+        if (tokens.length == 0) break;
+
         while (true) {
             const t = tokens.shift();
             if (!t) break;
@@ -105,7 +108,6 @@ export function tokenize(comp: Compilation): Unit[] {
             }
         }
 
-        if (tokens.length == 0) break;
 
         const argc = descriptors.find(it => it[0] == opr)?.[1];
         if (typeof argc !== "number") {

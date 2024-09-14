@@ -15,12 +15,15 @@ function test(_: number, m: Machine, __: Record<string, string>): BenchUnitResul
         },
         time: new Date().getTime(),
         stat: m.getStatus(),
-        version: VERSION + " (Lab 1)"
+        version: VERSION + " (Hello)"
     };
 
     const [res, msg] = m.run(10000);
 
     result.stat = m.getStatus();
+
+    result.io.input = "";
+    result.io.expected = "hello, world";
 
     if (res != "OK") {
         result.code = res;
@@ -31,9 +34,7 @@ function test(_: number, m: Machine, __: Record<string, string>): BenchUnitResul
     const out = m.getOutput().trim();
 
     const passed = out === "hello, world";
-
-    result.io.input = "";
-    result.io.expected = "hello, world";
+    
     result.io.received = out;
 
     if (passed) {

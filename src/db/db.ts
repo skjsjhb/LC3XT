@@ -1,5 +1,6 @@
 import sqlite from "better-sqlite3";
 import { BenchResult } from "../api/types";
+import { customAlphabet } from "nanoid";
 
 const db = sqlite("oj.db", {});
 
@@ -21,4 +22,18 @@ export function getRecord(id: string): BenchResult | null {
 export function addRecord(r: BenchResult) {
     console.log(`Adding record ${r.id}`);
     db.prepare("INSERT INTO records VALUES(?,?);").run(r.id, JSON.stringify(r));
+}
+
+const nanoid = customAlphabet("0123456789", 9);
+
+export function createId(): string {
+    while (true) {
+        const id = "A" + nanoid();
+        const res = db.prepare("SELECT id FROM records WHERE id = ?;").get(id);
+        if (res) {
+            // ID exists, try again
+            continue;
+        }
+        return id;
+    }
 }

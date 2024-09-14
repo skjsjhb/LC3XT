@@ -31,6 +31,7 @@ export interface BenchResult {
     // The time when the content is uploaded
     time: number;
     error: BenchError;
+    message: string;
     units: BenchUnitResult[];
 
     // The original request
