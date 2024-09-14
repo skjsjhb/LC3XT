@@ -162,7 +162,7 @@ export class Machine {
             throw `RE: 试图在用户模式下访问 ${printHex(addr)} 处的内存`;
         }
         if (asInstr && !this.memory.get(addr)) {
-            throw `RE: 试图从未加载的内存中读取指令（可能是缺少 HALT 或者跳转错误）`;
+            throw `RE: 试图从未加载的内存 ${printHex(addr)} 中读取指令（可能是缺少 HALT 或者跳转错误）`;
         }
         return this.memory.get(addr) || 0;
     }
