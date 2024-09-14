@@ -49,16 +49,18 @@ export class PSRState {
 
 const OS_CODE = `
 .ORIG x200
+ST R0, SR0
 LD R0, PSR
 ADD R6, R6, x-1
 STR R0, R6, x0
 LD R0, BOOT
 ADD R6, R6, x-1
 STR R0, R6, x0
-AND R0, R0, x0
+LD R0, SR0
 RTI
 PSR .FILL x8000
 BOOT .FILL x3000
+SR0 .BLKW 1
 .END
 `;
 
@@ -159,7 +161,7 @@ export class Machine {
             throw `RE: 内存地址 ${printHex(addr)} 无效`;
         }
         if (addr < 0x3000 && this.psr.mode == 1) {
-            throw `RE: 不能在用户模式下访问系统专用的内存地址 ${printHex(addr)}`;
+            throw `RE: 不能在用户模式下读取系统专用的内存地址 ${printHex(addr)}`;
         }
         if (asInstr && !this.memory.get(addr)) {
             throw `RE: 不能从未加载的内存地址 ${printHex(addr)} 中读取指令（可能是缺少 HALT 或者跳转错误）`;
@@ -184,7 +186,7 @@ export class Machine {
             throw `RE: 内存地址 ${printHex(addr)} 无效`;
         }
         if (addr < 0x3000 && this.psr.mode == 1) {
-            throw `RE: 不能在用户模式下访问系统专用的内存地址 ${printHex(addr)}`;
+            throw `RE: 不能在用户模式下写入系统专用的内存地址 ${printHex(addr)}`;
         }
         this.memory.set(addr, value);
     }
@@ -270,7 +272,6 @@ export class Machine {
         this.pc++;
         const instr = instrNum.toString(2).padStart(16, "0");
         this.status.instCount++;
-
         const opcode = instr.slice(0, 4);
         switch (opcode) {
             // ADD
