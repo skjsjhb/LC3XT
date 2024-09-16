@@ -1,4 +1,5 @@
 import { applyHyperProcess } from "./hyper";
+import { Program } from "../api/types";
 
 /**
  * A unit is an instruction or a pseudo instruction.
@@ -7,12 +8,6 @@ export interface Unit {
     labels: string[];
     name: string;
     args: string[];
-}
-
-export interface Program {
-    // The load address
-    origin: string;
-    code: string[];
 }
 
 
@@ -458,20 +453,28 @@ export function buildBinary(comp: Compilation, symbols: Map<string, number>, uni
     };
 }
 
+export interface AssembleResult {
+    intermediate: string;
+    programs: Program[];
+}
+
 /**
  * Assembles the program.
  */
-export function assemble(src: string): Program[] {
+export function assemble(src: string): AssembleResult {
     const comp: Compilation = {
         strings: new Map(),
         source: src,
         units: []
     };
     applyHyperProcess(comp);
+    const intermediate = comp.source;
     const units = tokenize(comp);
     const segments = splitUnits(units);
-    return segments.map(seg => {
+    const programs = segments.map(seg => {
         const symbols = buildSymbolTable(comp, seg);
         return buildBinary(comp, symbols, seg);
     });
+
+    return { programs, intermediate };
 }

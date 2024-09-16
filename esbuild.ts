@@ -1,4 +1,7 @@
 import esbuild from "esbuild";
+import * as process from "node:process";
+
+const isDev = process.env.NODE_ENV != "production";
 
 await esbuild.build({
     entryPoints: {
@@ -7,7 +10,8 @@ await esbuild.build({
         "index": "src/index.ts"
     },
     bundle: true,
-    minify: true,
+    minify: !isDev,
+    sourcemap: isDev ? "inline" : false,
     outdir: "dist",
     platform: "node",
     external: ["better-sqlite3"],

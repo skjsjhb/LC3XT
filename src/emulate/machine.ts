@@ -1,13 +1,6 @@
 import { assemble } from "../assemble/codegen";
+import { MachineStat } from "../api/types";
 
-/**
- * Statistics of the machine.
- */
-export interface MachineStat {
-    memRead: number;
-    memWrite: number;
-    instCount: number;
-}
 
 const conditionCode = {
     N: 0b100,
@@ -141,7 +134,7 @@ export class Machine {
         this.reg[6] = this.ssp;
 
         // Assemble and load OS code
-        const [os] = assemble(OS_CODE);
+        const { programs: [os] } = assemble(OS_CODE);
         this.loadProgram([os.origin].concat(os.code));
     }
 

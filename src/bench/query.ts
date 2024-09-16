@@ -4,7 +4,7 @@ import { customAlphabet } from "nanoid";
 
 const db = sqlite("oj.db", {});
 
-export function dbInit() {
+export function initQueryDB() {
     db.exec("CREATE TABLE IF NOT EXISTS records(id CHARACTER(16) PRIMARY KEY NOT NULL, content TEXT NOT NULL);");
 }
 
@@ -20,8 +20,8 @@ export function getRecord(id: string): BenchResult | null {
 }
 
 export function addRecord(r: BenchResult) {
-    console.log(`Adding record ${r.id}`);
     db.prepare("INSERT INTO records VALUES(?,?);").run(r.id, JSON.stringify(r));
+    console.log(`Documented ${r.id}`);
 }
 
 const nanoid = customAlphabet("0123456789", 9);

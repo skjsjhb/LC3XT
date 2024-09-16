@@ -1,6 +1,14 @@
-import { MachineStat } from "../emulate/machine";
+/**
+ * Statistics of the machine.
+ */
+export interface MachineStat {
+    memRead: number;
+    memWrite: number;
+    instCount: number;
+}
 
 export interface BenchRequest {
+    session: string; // Unique browser ID
     labId: string;
     language: string;
     source: string;
@@ -24,6 +32,25 @@ export interface BenchUnitResult {
     stat: MachineStat;
 }
 
+export interface KACReport {
+    similar: KACSimilarityRecord[];
+}
+
+export interface KACSimilarityRecord {
+    id: string;
+    confidence: number;
+}
+
+export interface Program {
+    // The load address
+    origin: string;
+    code: string[];
+}
+
+export interface CompilationResult {
+    intermediate: string;
+}
+
 export interface BenchResult {
     id: string;
 
@@ -36,4 +63,8 @@ export interface BenchResult {
 
     // The original request
     request: BenchRequest;
+
+    compilation: CompilationResult;
+
+    kac: KACReport;
 }

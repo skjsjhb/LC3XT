@@ -27,6 +27,12 @@ export function bench<T>(
         message: "",
         units: [],
         request: wd.request,
+        compilation: {
+            intermediate: ""
+        },
+        kac: {
+            similar: []
+        },
         version: VERSION
     };
 
@@ -40,8 +46,9 @@ export function bench<T>(
                 break;
             case "asm":
             default: {
-                const prog = assemble(req.source);
-                bin = prog.map(p => [p.origin].concat(p.code));
+                const { intermediate, programs } = assemble(req.source);
+                result.compilation.intermediate = intermediate;
+                bin = programs.map(p => [p.origin].concat(p.code));
             }
         }
 
