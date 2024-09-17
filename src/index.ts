@@ -10,8 +10,14 @@ import { VERSION } from "./api/version";
 
 const port = 7900;
 
-initQueryDB();
-initACDB();
+const queryDBPath = process.env.QUERY_DB_PATH || "oj.db";
+const kacDBPath = process.env.KAC_DB_PATH || "koi.db";
+
+console.log(`Picked up query DB path: ${queryDBPath}`);
+console.log(`Picked up KAC DB path: ${kacDBPath}`);
+
+initQueryDB(queryDBPath);
+initACDB(kacDBPath);
 
 const app = express();
 app.use(express.json());

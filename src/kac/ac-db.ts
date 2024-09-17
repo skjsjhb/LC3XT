@@ -1,13 +1,14 @@
-import sqlite from "better-sqlite3";
+import sqlite, { Database } from "better-sqlite3";
 
-const db = sqlite("koi.db", {});
+let db: Database;
 
 export interface KACRecord {
     session: string;
     src: string;
 }
 
-export function initACDB() {
+export function initACDB(pt: string) {
+    db = sqlite(pt, {});
     db.exec("CREATE TABLE IF NOT EXISTS sources(id CHARACTER(16) PRIMARY KEY NOT NULL, record TEXT NOT NULL);");
 }
 

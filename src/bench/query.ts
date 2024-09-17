@@ -1,10 +1,11 @@
-import sqlite from "better-sqlite3";
+import sqlite, { Database } from "better-sqlite3";
 import { BenchResult } from "../api/types";
 import { customAlphabet } from "nanoid";
 
-const db = sqlite("oj.db", {});
+let db: Database;
 
-export function initQueryDB() {
+export function initQueryDB(pt: string) {
+    db = sqlite(pt, {});
     db.exec("CREATE TABLE IF NOT EXISTS records(id CHARACTER(16) PRIMARY KEY NOT NULL, content TEXT NOT NULL);");
 }
 
