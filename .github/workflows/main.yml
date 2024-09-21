@@ -24,5 +24,8 @@ jobs:
         run: |
           pnpm install
           pnpm build
+      - name: Run Tests
+        run: |
+          pnpm test
       - name: Restart Service
         run: pm2 restart lc3xt

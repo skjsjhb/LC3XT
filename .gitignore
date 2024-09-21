@@ -3,4 +3,6 @@ node_modules
 .vscode
 *.js
 dist
+out
 *.db
+coverage
