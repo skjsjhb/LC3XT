@@ -1,37 +1,48 @@
 #!/usr/bin/env node
 
-import { readFile, writeFile } from "node:fs/promises";
-import * as readline from "node:readline";
+import { readFile } from "node:fs/promises";
 import * as zlib from "node:zlib";
 import arg from "arg";
 import consola from "consola";
+import { outputFile } from "fs-extra";
 import i18next, { t } from "i18next";
 import { i18nInit } from "../i18n/i18n";
 import { loli } from "../loli/api";
+import { readStdin } from "./input";
 
 async function main() {
+    process.on("uncaughtException", e => {
+        consola.error(e);
+        process.exit(1);
+    });
+
+    process.on("unhandledRejection", e => {
+        consola.error(e);
+        process.exit(1);
+    });
+
     const args = arg({
         "--help": Boolean,
         "--version": Boolean,
         "--lang": String,
         "--stdin": Boolean,
-        "--file": Boolean,
-        "--debug": Boolean,
+        "--out": String,
+        "--debug": String,
 
         "-h": "--help",
         "-v": "--version",
         "-l": "--lang",
-        "-f": "--file",
+        "-o": "--out",
         "-g": "--debug",
     });
 
     await i18nInit(args["--lang"]);
 
-    consola.info(t("cli.locale", { lang: i18next.language }));
+    consola.info(t("cli.loli.locale", { lang: i18next.language }));
 
     if (args["--help"]) {
         console.log("\n");
-        consola.log(t("cli.help"));
+        consola.log(t("cli.loli.help"));
         console.log("\n");
         process.exit(0);
     }
@@ -45,40 +56,22 @@ async function main() {
     const [srcFile] = args._;
     if (srcFile === undefined) {
         if (args["--stdin"]) {
-            const rl = readline.createInterface({
-                input: process.stdin,
-                output: process.stdout,
-                terminal: false,
-            });
-
-            await new Promise<void>(res => {
-                rl.on("line", line => {
-                    src += line;
-                });
-
-                rl.once("close", () => res());
-            });
+            src = await readStdin();
         } else {
-            consola.error(t("cli.no-source"));
+            consola.error(t("cli.loli.no-source"));
             process.exit(1);
         }
     } else {
-        try {
-            src += (await readFile(srcFile)).toString();
-        } catch (e) {
-            consola.error(t("cli.cannot-read-file", { file: srcFile }));
-            consola.error(e);
-            process.exit(1);
-        }
+        src += (await readFile(srcFile)).toString();
     }
 
-    consola.success(t("cli.stdin-read"));
-    consola.info(t("cli.assemble"));
+    consola.success(t("cli.loli.source-read"));
+    consola.info(t("cli.loli.assemble"));
 
     const ctx = loli.build(src);
 
     for (const ex of ctx.exceptions) {
-        const msg = t(`cli.has-${ex.level}`, {
+        const msg = t(`cli.loli.has-${ex.level}`, {
             lineNo: ex.lineNo,
             msg: ex.message,
         });
@@ -90,50 +83,40 @@ async function main() {
     }
 
     if (ctx.hasError()) {
-        consola.error(t("cli.error"));
+        consola.error(t("cli.loli.error"));
         process.exit(1);
+    }
+
+    if (ctx.allRight()) {
+        consola.success(t("cli.loli.no-error"));
+    } else {
+        consola.warn(t("cli.loli.warn"));
     }
 
     const programs = ctx.outputBinary();
 
-    consola.success(t("cli.done-binary", { count: programs.length }));
+    consola.success(t("cli.loli.done-binary", { count: programs.length }));
 
-    if (args["--debug"]) {
-        consola.info(t("cli.debug"));
-        if (args["--file"]) {
-            const out = "a.debug.json.gz";
-            consola.info(t("cli.writing-file", { file: out }));
-            const debugInfo = ctx.outputDebug();
-            const buf = Buffer.from(debugInfo, "utf-8");
-            const data = zlib.gzipSync(buf);
-            await writeFile(out, data);
-        } else {
-            const doPrint = await consola.prompt(t("cli.debug-stdout"), {
-                type: "confirm",
-                initial: false,
-            });
-            if (doPrint) {
-                console.log("\n");
-                console.log(ctx.outputDebug());
-                console.log("\n");
-            }
-            consola.info(t("cli.output-stdin"));
-        }
+    const outFile = args["--out"];
+    const debugFile = args["--debug"];
+
+    const content = programs.map(p => p.join("\n")).join("\n>>>\n");
+    if (outFile) {
+        consola.info(t("cli.loli.writing-file", { file: outFile }));
+        await outputFile(outFile, content);
     } else {
-        if (args["--file"]) {
-            for (const [i, p] of programs.entries()) {
-                const out = `a.bin.${i}.txt`;
-                consola.info(t("cli.writing-file", { file: out }));
-                await writeFile(out, p.join("\n"));
-            }
-        } else {
-            for (const p of programs) {
-                console.log("\n");
-                console.log(p.join("\n"));
-                console.log("\n");
-            }
-            consola.info(t("cli.output-stdin"));
-        }
+        console.log("\n");
+        console.log(content);
+        console.log("\n");
+        consola.info(t("cli.loli.output-stdin"));
+    }
+
+    if (debugFile) {
+        consola.info(t("cli.loli.debug"));
+        const debugBundle = ctx.outputDebug();
+        const data = zlib.gzipSync(Buffer.from(debugBundle, "utf-8"));
+        consola.info(t("cli.loli.writing-file", { file: debugFile }));
+        await outputFile(debugFile, data);
     }
 }
 

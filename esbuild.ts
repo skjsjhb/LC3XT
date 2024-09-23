@@ -15,6 +15,7 @@ await esbuild.build({
         lab1: "drivers/lab1.ts",
         index: "src/index.ts",
         loli: "src/cli/loli.ts",
+        sugar: "src/cli/sugar.ts",
     },
     bundle: true,
     minify: !isDev,

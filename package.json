@@ -5,7 +5,8 @@
     "type": "module",
     "description": "User friendly toolset for the little computer.",
     "bin": {
-        "loli": "dist/loli.cjs"
+        "loli": "dist/loli.cjs",
+        "sugar": "dist/sugar.cjs"
     },
     "scripts": {
         "test": "vitest run",
@@ -20,6 +21,7 @@
         "@types/better-sqlite3": "^7.6.11",
         "@types/cors": "^2.8.17",
         "@types/express": "^4.17.21",
+        "@types/fs-extra": "^11.0.4",
         "@types/js-levenshtein": "^1.1.3",
         "@types/node": "^22.5.5",
         "@vitest/coverage-v8": "^2.1.1",
@@ -35,6 +37,7 @@
         "consola": "^3.2.3",
         "cors": "^2.8.5",
         "express": "^4.21.0",
+        "fs-extra": "^11.2.0",
         "i18next": "^23.15.1",
         "js-levenshtein": "^1.1.6",
         "nanoid": "^5.0.7",

@@ -213,7 +213,7 @@ export function tokenize(context: AssembleContext) {
         if (labels.length > 1) {
             context.raise("duplicated-label", {
                 op,
-                labels: labels.toString(),
+                labels: labels.join(" "),
             });
         }
         const expectedArgs = opCodeArgc[op as OpCode];

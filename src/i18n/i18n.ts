@@ -12,5 +12,8 @@ export async function i18nInit(lang = "") {
             "zh-CN": zhCN,
         },
         fallbackLng: "en-US",
+        interpolation: {
+            escapeValue: false,
+        },
     });
 }

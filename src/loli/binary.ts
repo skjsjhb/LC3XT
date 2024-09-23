@@ -13,29 +13,55 @@ export function createBinary(context: AssembleContext) {
 
     let firstProgram = true;
     let origin = 0x3000;
+    const dataMemory = new Set<number>();
 
+    // Pushes a finalized program into collection
     function finalizeProgram() {
-        // Finalize the last program
         context.binary.push({
             origin,
             bin,
         });
+
         if (bin.length === 0) {
             context.raise("empty-program", {
                 address: toHex(origin),
             });
         }
+
+        // Collect executable addresses
+        for (let i = 0; i < bin.length; i++) {
+            const currentAddr = origin + i;
+            // To process overlaps, we override the set with current built values
+            // In case any duplication, we make sure that non-executable addresses are removed
+            context.debug.execMemory.delete(currentAddr);
+            if (!dataMemory.has(currentAddr)) {
+                context.debug.execMemory.add(currentAddr);
+            }
+        }
         bin = [];
+    }
+
+    function getCurrentPC(): number {
+        return origin + bin.length;
     }
 
     function getPCOffset(label: string, bits: number): number {
         const loc = context.symbols.get(label) ?? 0;
-        const diff = loc - (origin + bin.length + 1);
+        const diff = loc - (getCurrentPC() + 1);
         return toComplement(diff, bits);
+    }
+
+    function markDataMemory() {
+        dataMemory.add(getCurrentPC());
     }
 
     for (const si of context.intermediate.semanticInstructions) {
         context.lineNo = si.lineNo;
+
+        // Maps the current PC to line number
+        // If this is a pseudo-op with no real address, then it will be overridden by the next instr
+        // This is expected
+        context.debug.lineMap.set(getCurrentPC(), si.lineNo);
 
         switch (si.op) {
             case ".ORIG":
@@ -48,6 +74,7 @@ export function createBinary(context: AssembleContext) {
 
             case ".BLKW":
                 for (let i = 0; i < si.imm; i++) {
+                    markDataMemory();
                     bin.push(0);
                 }
                 break;
@@ -58,12 +85,15 @@ export function createBinary(context: AssembleContext) {
 
             case ".STRINGZ":
                 for (const c of context.strings[si.imm]) {
+                    markDataMemory();
                     bin.push(c.charCodeAt(0));
                 }
+                markDataMemory();
                 bin.push(0); // Termination
                 break;
 
             case ".FILL":
+                markDataMemory();
                 bin.push(toComplement(si.imm, 16));
                 break;
 

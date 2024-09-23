@@ -1,8 +1,9 @@
+import type { DebugBundle } from "../debug/debug";
 import {
-    type ExceptionDetails,
-    type ExceptionSummary,
-    type ExceptionType,
-    buildExceptionSummary,
+    type AssembleException,
+    type AssembleExceptionDetails,
+    type AssembleExceptionSummary,
+    buildAssembleException,
 } from "./exceptions";
 import type { SemanticInstruction } from "./parse";
 import type { Token } from "./tokenize";
@@ -49,6 +50,15 @@ export class AssembleContext {
     }[] = [];
 
     /**
+     * Debug information.
+     */
+    debug: DebugBundle = {
+        execMemory: new Set(),
+        symbols: new Map(),
+        lineMap: new Map(),
+    };
+
+    /**
      * A global state for easy tracking when parsing.
      */
     lineNo = 0;
@@ -66,7 +76,7 @@ export class AssembleContext {
     /**
      * Contains information about the exceptions.
      */
-    exceptions: ExceptionSummary[] = [];
+    exceptions: AssembleExceptionSummary[] = [];
 
     constructor(src: string) {
         this.source = src;
@@ -74,10 +84,13 @@ export class AssembleContext {
     }
 
     /**
-     * Throws an exception with its summary immediately.
+     * Adds an exception with its summary.
      */
-    raise<T extends ExceptionType>(type: T, detail: ExceptionDetails[T]): void {
-        const ex = buildExceptionSummary(this.lineNo, type, detail);
+    raise<T extends AssembleException>(
+        type: T,
+        detail: AssembleExceptionDetails[T],
+    ): void {
+        const ex = buildAssembleException(this.lineNo, type, detail);
         this.exceptions.push(ex);
     }
 
@@ -94,10 +107,15 @@ export class AssembleContext {
      * Print the output as debug context.
      */
     outputDebug(): string {
-        return JSON.stringify({
-            ...this,
-            symbols: Object.fromEntries(this.symbols.entries()),
-        });
+        return JSON.stringify(
+            {
+                execMemory: Array.from(this.debug.execMemory),
+                symbols: Array.from(this.symbols),
+                lineMap: Array.from(this.debug.lineMap),
+            },
+            null,
+            2,
+        );
     }
 
     /**
@@ -105,6 +123,13 @@ export class AssembleContext {
      */
     hasError(): boolean {
         return !!this.exceptions.find(it => it.level === "error");
+    }
+
+    /**
+     * Checks whether there are no errors or exceptions.
+     */
+    allRight(): boolean {
+        return this.exceptions.length === 0;
     }
 }
 

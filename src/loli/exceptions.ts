@@ -1,8 +1,8 @@
 import { t } from "i18next";
 
-export type ExceptionLevel = "warn" | "error";
+export type AssembleExceptionLevel = "warn" | "error";
 
-export type ExceptionType =
+export type AssembleException =
     | "unsupported-escape"
     | "missing-args"
     | "unmatched-argc"
@@ -27,7 +27,7 @@ export type ExceptionType =
     | "negative-trap"
     | "label-redefined";
 
-const exceptionLevelMap: Record<ExceptionType, ExceptionLevel> = {
+const exceptionLevelMap: Record<AssembleException, AssembleExceptionLevel> = {
     "unsupported-escape": "warn",
     "missing-args": "warn",
     "unmatched-argc": "error",
@@ -53,7 +53,7 @@ const exceptionLevelMap: Record<ExceptionType, ExceptionLevel> = {
     "label-redefined": "warn",
 };
 
-export type ExceptionDetails = {
+export type AssembleExceptionDetails = {
     "unsupported-escape": {
         str: string;
     };
@@ -152,28 +152,28 @@ export type ExceptionDetails = {
     };
 };
 
-export interface ExceptionSummary {
+export interface AssembleExceptionSummary {
     lineNo: number;
-    level: ExceptionLevel;
+    level: AssembleExceptionLevel;
     message: string;
 }
 
-function translateException<T extends ExceptionType>(
+function translateException<T extends AssembleException>(
     type: T,
-    detail: ExceptionDetails[T],
+    detail: AssembleExceptionDetails[T],
 ) {
-    const key = `exception.${type}`;
+    const key = `exception.asm.${type}`;
     return t(key, { ...detail } as Record<string, string>);
 }
 
 /**
  * Creates a localized summary for the exception.
  */
-export function buildExceptionSummary<T extends ExceptionType>(
+export function buildAssembleException<T extends AssembleException>(
     lineNo: number,
     type: T,
-    detail: ExceptionDetails[T],
-): ExceptionSummary {
+    detail: AssembleExceptionDetails[T],
+): AssembleExceptionSummary {
     const level = exceptionLevelMap[type];
     return {
         lineNo,
