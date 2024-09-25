@@ -24,7 +24,6 @@ function build(src: string): AssembleContext {
 
     // Build
     createBinary(ctx);
-
     return ctx;
 }
 

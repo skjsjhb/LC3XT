@@ -1,5 +1,7 @@
+import { t } from "i18next";
 import type { DebugBundle } from "../debug/debug";
 import { toHex } from "../util/fmt";
+import { waitEventLoop } from "../util/sys";
 import {
     type RuntimeException,
     type RuntimeExceptionDetails,
@@ -8,7 +10,11 @@ import {
 } from "./exceptions";
 import { Memory } from "./memory";
 
-export type HaltReason = "requested" | "error" | "input";
+export type HaltReason =
+    | "requested"
+    | "error"
+    | "input"
+    | "time-limit-exceeded";
 
 /**
  * The main LC-3 VM.
@@ -28,7 +34,7 @@ export class VM {
     private exceptions: RuntimeExceptionSummary[] = [];
 
     private instrCount = 0;
-    private limit;
+    private limit = 10000;
 
     private condition = 0;
 
@@ -54,13 +60,12 @@ export class VM {
 
     private nativeIntHandlers = new Map<number, () => void>();
 
-    constructor(limit = 10000, debug?: DebugBundle, strict = false) {
+    constructor(debug?: DebugBundle, strict = false) {
         if (debug) {
             this.debugInfo = debug;
         }
 
         this.strict = strict;
-        this.limit = limit;
 
         this.addNativeHandler(0x20, () => {
             // GETC
@@ -122,6 +127,23 @@ export class VM {
         });
     }
 
+    // Convert address to hexadecimal and attach debug symbols
+    private interpretAddress(addr: number): string {
+        const value = toHex(addr);
+        let label = "";
+        for (const [lb, a] of this.debugInfo.symbols.entries()) {
+            if (a === addr) {
+                label = lb;
+                break;
+            }
+        }
+
+        if (label) {
+            return `${value} [${label}]`;
+        }
+        return value;
+    }
+
     private addNativeHandler(id: number, h: () => void) {
         this.nativeIntHandlers.set(id, h);
     }
@@ -143,8 +165,8 @@ export class VM {
         const stackLimit = this.isUser() ? 0xfe00 : 0x3000;
         if (addr >= stackLimit) {
             this.raise("possible-stack-underflow", {
-                address: toHex(addr),
-                expected: toHex(stackLimit),
+                address: this.interpretAddress(addr),
+                expected: this.interpretAddress(stackLimit),
             });
         }
         this.setReg(6, addr + 1);
@@ -177,6 +199,10 @@ export class VM {
             this.halt = true;
             this.haltReason = "error";
         }
+    }
+
+    getHaltReason(): HaltReason {
+        return this.haltReason;
     }
 
     /**
@@ -252,6 +278,12 @@ export class VM {
         const addr = this.pc - 1; // PC has already incremented when reporting
         const instr = this.memory.readAnyway(addr);
         const ex = buildRuntimeException(addr, instr, type, detail);
+
+        const lineNo = this.debugInfo.lineMap.get(addr) ?? -1;
+        if (lineNo >= 0) {
+            ex.message += t("debug.source-pos", { line: lineNo });
+        }
+
         this.exceptions.push(ex);
     }
 
@@ -262,6 +294,10 @@ export class VM {
         return this.exceptions.find(it => it.level === "error") !== undefined;
     }
 
+    setLimit(n: number) {
+        this.limit = n;
+    }
+
     run() {
         this.halt = false;
         while (!this.halt) {
@@ -269,22 +305,30 @@ export class VM {
         }
     }
 
+    async runAsync() {
+        this.halt = false;
+        while (!this.halt) {
+            this.runNext();
+            await waitEventLoop();
+        }
+    }
+
     runNext() {
         if (this.halt) return; // The halt flag must be cleared before run
 
         const instr = this.memory.read(this.pc, false) & 0xffff; // Do not count for instructions
+        this.instrCount++;
+        this.pc++;
+
         if (
             this.debugInfo.execMemory.size > 0 &&
-            !this.debugInfo.execMemory.has(this.pc)
+            !this.debugInfo.execMemory.has(this.pc - 1)
         ) {
             this.raise("data-execution", {
-                address: toHex(this.pc),
+                address: this.interpretAddress(this.pc - 1),
                 content: toHex(instr),
             });
         }
-
-        this.instrCount++;
-        this.pc++;
 
         const op = instr >> 12;
         const dr = (instr >> 9) & 0b111;
@@ -334,7 +378,7 @@ export class VM {
                 if (dr === 0) {
                     // DR contains NZP flags
                     this.raise("suspicious-empty-branch", {
-                        address: toHex(this.pc - 1),
+                        address: this.interpretAddress(this.pc - 1),
                         instr: toHex(instr),
                     });
                 }
@@ -443,14 +487,15 @@ export class VM {
 
             default: {
                 this.raise("invalid-instruction", {
-                    address: toHex(this.pc - 1),
+                    address: this.interpretAddress(this.pc - 1),
                     instr: toHex(instr),
                 });
             }
         }
 
         if (this.instrCount > this.limit) {
-            this.raise("time-limit-exceeded", { limit: this.limit });
+            this.halt = true;
+            this.haltReason = "time-limit-exceeded";
         }
 
         this.haltOnError();
@@ -459,7 +504,7 @@ export class VM {
     endInterrupt() {
         if (this.isUser()) {
             this.raise("instr-permission-denied", {
-                address: toHex(this.pc - 1),
+                address: this.interpretAddress(this.pc - 1),
             });
             return;
         }

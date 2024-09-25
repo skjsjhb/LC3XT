@@ -67,6 +67,8 @@ export default {
                 "vm-exit-ok": "虚拟机正常关闭",
                 "vm-exit-error": "虚拟机未正常关闭",
                 "vm-output": "程序的输出如下",
+                "no-debug-bundle":
+                    "若要获得更详细的消息，请用 --debug 附加二进制文件的调试信息",
             },
         },
         exception: {
@@ -123,8 +125,6 @@ export default {
                 "interrupt-unhandled": "中断 {{vec}} 没有注册处理程序",
                 "suspicious-empty-branch":
                     "{{address}} 处的 BR 指令 {{instr}} 没有条件码",
-                "time-limit-exceeded":
-                    "已执行的指令数超出了 {{limit}} 条的限制",
                 "suspicious-system-stack":
                     "系统栈地址 {{address}} 不应位于用户空间或映射 I/O 区域中",
                 "suspicious-user-stack":
@@ -133,5 +133,11 @@ export default {
                     "栈顶指针位置异常，应当在 {{expected}} 以下，但当前值是 {{address}}",
             } satisfies Record<RuntimeException, string>,
         },
+
+        debug: {
+            "source-pos": "（请检查源代码第 {{line}} 行）",
+        },
+
+        nya: {},
     },
 };

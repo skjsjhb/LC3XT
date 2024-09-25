@@ -11,11 +11,11 @@ const gitTag = (
 
 await esbuild.build({
     entryPoints: {
-        hello: "drivers/hello.ts",
-        lab1: "drivers/lab1.ts",
-        index: "src/index.ts",
         loli: "src/cli/loli.ts",
         sugar: "src/cli/sugar.ts",
+        nya: "src/nya/host.ts",
+        "proc-launcher": "src/nya/runners/proc.ts",
+        "ws-launcher": "src/nya/runners/ws.ts",
     },
     bundle: true,
     minify: !isDev,

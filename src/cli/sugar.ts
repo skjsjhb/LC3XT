@@ -29,7 +29,7 @@ async function main() {
         "--stdin": Boolean,
         "--debug": String,
         // "--interactive": Boolean,
-        "--boot": Number,
+        "--boot": String,
         "--limit": Number,
         "--strict": Boolean,
 
@@ -134,7 +134,8 @@ async function main() {
         consola.info(t("cli.sugar.vm-strict"));
     }
 
-    const vm = new VM(limit, debugBundle, strict);
+    const vm = new VM(debugBundle, strict);
+    vm.setLimit(limit);
 
     for (const p of programs) {
         vm.loadProgram(p);
@@ -154,6 +155,10 @@ async function main() {
         } else {
             consola.error(e.message);
         }
+    }
+
+    if (vm.getExceptions().length > 0 && !debugFile) {
+        consola.info(t("cli.sugar.no-debug-bundle"));
     }
 
     const output = vm.getOutput();

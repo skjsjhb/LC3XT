@@ -12,13 +12,12 @@ export type RuntimeException =
     | "invalid-instruction"
     | "interrupt-unhandled"
     | "suspicious-empty-branch"
-    | "time-limit-exceeded"
     | "suspicious-system-stack"
     | "suspicious-user-stack"
     | "possible-stack-underflow";
 
 const exceptionLevelMap: Record<RuntimeException, RuntimeExceptionLevel> = {
-    "unloaded-memory": "warn",
+    "unloaded-memory": "error",
     "data-execution": "warn",
     "address-out-of-range": "error",
     "memory-permission-denied": "error",
@@ -28,7 +27,6 @@ const exceptionLevelMap: Record<RuntimeException, RuntimeExceptionLevel> = {
     "invalid-instruction": "error",
     "interrupt-unhandled": "warn",
     "suspicious-empty-branch": "warn",
-    "time-limit-exceeded": "error",
     "suspicious-system-stack": "warn",
     "suspicious-user-stack": "warn",
     "possible-stack-underflow": "warn",
@@ -67,9 +65,6 @@ export type RuntimeExceptionDetails = {
     "suspicious-empty-branch": {
         address: string;
         instr: string;
-    };
-    "time-limit-exceeded": {
-        limit: number;
     };
     "suspicious-system-stack": {
         address: string;

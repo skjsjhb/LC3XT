@@ -106,16 +106,12 @@ export class AssembleContext {
     /**
      * Print the output as debug context.
      */
-    outputDebug(): string {
-        return JSON.stringify(
-            {
-                execMemory: Array.from(this.debug.execMemory),
-                symbols: Array.from(this.symbols),
-                lineMap: Array.from(this.debug.lineMap),
-            },
-            null,
-            2,
-        );
+    outputDebug(): DebugBundle {
+        return {
+            execMemory: this.debug.execMemory,
+            symbols: this.symbols,
+            lineMap: this.debug.lineMap,
+        };
     }
 
     /**

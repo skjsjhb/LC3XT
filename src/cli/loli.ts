@@ -114,7 +114,12 @@ async function main() {
     if (debugFile) {
         consola.info(t("cli.loli.debug"));
         const debugBundle = ctx.outputDebug();
-        const data = zlib.gzipSync(Buffer.from(debugBundle, "utf-8"));
+        const out = {
+            execMemory: Array.from(debugBundle.execMemory),
+            symbols: Array.from(debugBundle.symbols),
+            lineMap: Array.from(debugBundle.lineMap),
+        };
+        const data = zlib.gzipSync(Buffer.from(JSON.stringify(out), "utf-8"));
         consola.info(t("cli.loli.writing-file", { file: debugFile }));
         await outputFile(debugFile, data);
     }
