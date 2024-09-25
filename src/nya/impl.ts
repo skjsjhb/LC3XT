@@ -54,13 +54,14 @@ export function runTest(context: TestContext): TestResult {
 
                     vm.loadProgram(p);
                 }
-                const unitResult = driver.exec(vm);
+                const unitResult = driver.exec(vm, context.env);
                 unitResults.push(unitResult);
             }
         }
         return {
             context,
             id: "",
+            time: new Date().getTime(),
             error: "",
             runner: "", // Will be assigned later in the host
             runnerVersion: getVersion(),
@@ -74,6 +75,7 @@ export function runTest(context: TestContext): TestResult {
         return {
             context,
             id: "",
+            time: new Date().getTime(),
             error: String(e),
             runner: "",
             runnerVersion: getVersion(),

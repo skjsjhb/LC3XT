@@ -2,6 +2,7 @@ import consola from "consola";
 import cors from "cors";
 import express, { json } from "express";
 import { i18nInit } from "../i18n/i18n";
+import { getVersion } from "../util/version";
 import type { TestContext } from "./context";
 import { execTestRun, initWSRunnerHost } from "./runner";
 import { reportSimilarity } from "./sac";
@@ -9,8 +10,8 @@ import { createId, enrollResult, getResult, initNyaStore } from "./store";
 
 async function main() {
     await i18nInit();
-
-    initNyaStore();
+    const dbPath = process.env.NYA_DB_PATH || "nya.db";
+    initNyaStore(dbPath);
     initWSRunnerHost(7902);
 
     const port = 7901;
@@ -34,6 +35,10 @@ async function main() {
 
         enrollResult(id, r);
         pendingTests.delete(id);
+    });
+
+    app.get("/version", (req, res) => {
+        res.status(200).send(getVersion()).end();
     });
 
     app.get("/record/:id", (req, res) => {

@@ -190,6 +190,7 @@ export async function execTestRun(context: TestContext): Promise<TestResult> {
     return {
         context,
         id: "",
+        time: new Date().getTime(),
         error: "No runner available in 30 seconds",
         runner: "",
         runnerVersion: getVersion(),

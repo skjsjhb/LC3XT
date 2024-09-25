@@ -10,12 +10,14 @@ export type TestContext = {
     lang: Language;
     source: string;
     driver: string;
+    env: Record<string, string>;
 };
 
 export type TestResult = {
     id: string;
     error: string; // Internal error
     context: TestContext;
+    time: number;
     runner: string;
     runnerVersion: string;
     assembleExceptions: AssembleExceptionSummary[];
@@ -41,4 +43,7 @@ export type TestUnitResult = {
     time: number;
 };
 
-export type TestExecutor = (vm: VM) => TestUnitResult;
+export type TestExecutor = (
+    vm: VM,
+    env: Record<string, string>,
+) => TestUnitResult;

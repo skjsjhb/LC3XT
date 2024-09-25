@@ -1,12 +1,13 @@
-import sqlite from "better-sqlite3";
+import sqlite, { type Database } from "better-sqlite3";
 import consola from "consola";
 import type { TestResult } from "./context";
 
-const db = sqlite("nya.db");
+let db: Database;
 
 let lastId = 1;
 
-export function initNyaStore() {
+export function initNyaStore(path: string) {
+    db = sqlite(path);
     db.exec("CREATE TABLE IF NOT EXISTS lastId(id INT);"); // DB for stats
     db.exec(
         "CREATE TABLE IF NOT EXISTS records(id CHARACTER(16) PRIMARY KEY, content TEXT);",
