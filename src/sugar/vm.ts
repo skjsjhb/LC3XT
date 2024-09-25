@@ -173,15 +173,15 @@ export class VM {
         return this.memory.read(addr);
     }
 
-    private getReg(r: number): number {
+    getReg(r: number): number {
         return this.regFile[r];
     }
 
-    private getRegSigned(r: number): number {
+    getRegSigned(r: number): number {
         return toSigned(this.getReg(r), 16);
     }
 
-    private setReg(r: number, v: number) {
+    setReg(r: number, v: number) {
         this.regFile[r] = v & 0xffff;
     }
 
@@ -199,6 +199,10 @@ export class VM {
             this.halt = true;
             this.haltReason = "error";
         }
+    }
+
+    getMemory(): Memory {
+        return this.memory;
     }
 
     getHaltReason(): HaltReason {

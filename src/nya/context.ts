@@ -1,6 +1,5 @@
 import type { AssembleExceptionSummary } from "../loli/exceptions";
 import type { RuntimeExceptionSummary } from "../sugar/exceptions";
-import type { VM } from "../sugar/vm";
 import type { SACSimilarityRecord } from "./sac";
 
 export type Language = "asm" | "bin";
@@ -42,8 +41,3 @@ export type TestUnitResult = {
 
     time: number;
 };
-
-export type TestExecutor = (
-    vm: VM,
-    env: Record<string, string>,
-) => TestUnitResult;

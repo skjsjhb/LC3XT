@@ -9,7 +9,7 @@ import { reportSimilarity } from "./sac";
 import { createId, enrollResult, getResult, initNyaStore } from "./store";
 
 async function main() {
-    await i18nInit();
+    await i18nInit("zh-CN");
     const dbPath = process.env.NYA_DB_PATH || "nya.db";
     initNyaStore(dbPath);
     initWSRunnerHost(7902);
