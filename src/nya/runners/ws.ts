@@ -21,7 +21,7 @@ wsc.onmessage = async e => {
     if (e.data === "auth") {
         wsc.send(JSON.stringify({ passKey, id }));
     } else {
-        await i18nInit();
+        await i18nInit("zh-CN");
         consola.info("Picked up new test context");
         const context = JSON.parse(e.data.toString()) as TestContext;
         const res = runTest(context);
