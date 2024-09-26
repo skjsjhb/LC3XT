@@ -41,6 +41,10 @@ async function main() {
         res.status(200).send(getVersion()).end();
     });
 
+    app.get("/commit", (req, res) => {
+        res.status(200).send(process.env.GIT_TAG).end();
+    });
+
     app.get("/record/:id", (req, res) => {
         const { id } = req.params;
         if (pendingTests.has(id)) {
