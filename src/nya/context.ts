@@ -1,5 +1,6 @@
 import type { AssembleExceptionSummary } from "../loli/exceptions";
 import type { RuntimeExceptionSummary } from "../sugar/exceptions";
+import type { VMStat } from "../sugar/vm";
 import type { SACSimilarityRecord } from "./sac";
 
 export type Language = "asm" | "bin";
@@ -36,6 +37,8 @@ export type TestUnitResult = {
     };
 
     input: string;
+
+    stats: VMStat;
 
     runtimeExceptions: RuntimeExceptionSummary[];
 

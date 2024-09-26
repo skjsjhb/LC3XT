@@ -16,6 +16,12 @@ export type HaltReason =
     | "input"
     | "time-limit-exceeded";
 
+export type VMStat = {
+    instrCount: number;
+    memRead: number;
+    memWrite: number;
+};
+
 /**
  * The main LC-3 VM.
  */
@@ -171,6 +177,18 @@ export class VM {
         }
         this.setReg(6, addr + 1);
         return this.memory.read(addr);
+    }
+
+    /**
+     * Gets the VM statistics.
+     */
+    getStat(): VMStat {
+        const memStats = this.memory.getStats();
+        return {
+            instrCount: this.instrCount,
+            memRead: memStats.read,
+            memWrite: memStats.write,
+        };
     }
 
     getReg(r: number): number {

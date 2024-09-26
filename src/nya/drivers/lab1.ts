@@ -1,6 +1,6 @@
 import { toHex } from "../../util/fmt";
 import type { TestUnitResult } from "../context";
-import { type TestExecutor, translateHaltReason } from "../drivers";
+import { type TestExecutor, translateHaltReason } from "../drive";
 
 const driver: TestExecutor = (vm, env) => {
     const num = Math.round(Math.random() * 0xff);
@@ -23,6 +23,11 @@ const driver: TestExecutor = (vm, env) => {
         output: {
             expected: toHex(num),
             received: "",
+        },
+        stats: {
+            instrCount: 0,
+            memWrite: 0,
+            memRead: 0,
         },
         input: toHex(input),
         runtimeExceptions: [],
@@ -50,6 +55,7 @@ const driver: TestExecutor = (vm, env) => {
     }
 
     res.time = new Date().getTime();
+    res.stats = vm.getStat();
 
     return res;
 };

@@ -1,5 +1,5 @@
 import type { TestUnitResult } from "../context";
-import { type TestExecutor, translateHaltReason } from "../drivers";
+import { type TestExecutor, translateHaltReason } from "../drive";
 
 const driver: TestExecutor = (vm, env) => {
     const res: TestUnitResult = {
@@ -9,9 +9,15 @@ const driver: TestExecutor = (vm, env) => {
             received: "",
         },
         input: "",
+        stats: {
+            instrCount: 0,
+            memWrite: 0,
+            memRead: 0,
+        },
         runtimeExceptions: [],
         time: 0,
     };
+
     vm.setPC(0x3000);
     vm.run();
     res.runtimeExceptions = vm.getExceptions();
@@ -28,6 +34,7 @@ const driver: TestExecutor = (vm, env) => {
     }
 
     res.time = new Date().getTime();
+    res.stats = vm.getStat();
 
     return res;
 };

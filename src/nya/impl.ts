@@ -1,22 +1,30 @@
-import consola from "consola";
 import type { DebugBundle } from "../debug/debug";
 import { loli } from "../loli/api";
-import type { AssembleExceptionSummary } from "../loli/exceptions";
 import { VM } from "../sugar/vm";
 import { getVersion } from "../util/version";
-import type { TestContext, TestResult, TestUnitResult } from "./context";
-import { getTestDriver } from "./drivers";
+import type { TestContext, TestResult } from "./context";
+import { getTestDriver } from "./drive";
 
 export function runTest(context: TestContext): TestResult {
+    const result: TestResult = {
+        context,
+        id: "",
+        time: new Date().getTime(),
+        error: "",
+        runner: "", // Will be assigned later in the host
+        runnerVersion: getVersion(),
+        assembleExceptions: [],
+        assembleOK: true,
+        units: [],
+        sac: [],
+    };
     try {
-        const assembleExceptions: AssembleExceptionSummary[] = [];
         let binary: string[][] = [];
         let debugBundle: DebugBundle = {
             execMemory: new Set(),
             symbols: new Map(),
             lineMap: new Map(),
         };
-        const unitResults: TestUnitResult[] = [];
 
         const driver = getTestDriver(context.driver);
         switch (context.lang) {
@@ -24,7 +32,7 @@ export function runTest(context: TestContext): TestResult {
                 const ctx = loli.build(context.source);
                 binary = ctx.outputBinary();
                 debugBundle = ctx.outputDebug();
-                assembleExceptions.push(...ctx.exceptions);
+                result.assembleExceptions.push(...ctx.exceptions);
                 break;
             }
 
@@ -42,9 +50,11 @@ export function runTest(context: TestContext): TestResult {
             }
         }
 
-        const assembleOK = assembleExceptions.every(it => it.level !== "error");
+        result.assembleOK = result.assembleExceptions.every(
+            it => it.level !== "error",
+        );
 
-        if (assembleOK) {
+        if (result.assembleOK) {
             for (let i = 0; i < driver.repeat; i++) {
                 const vm = new VM(debugBundle);
                 for (const b of binary) {
@@ -54,35 +64,13 @@ export function runTest(context: TestContext): TestResult {
 
                     vm.loadProgram(p);
                 }
-                const unitResult = driver.exec(vm, context.env);
-                unitResults.push(unitResult);
+                result.units.push(driver.exec(vm, context.env));
             }
         }
-        return {
-            context,
-            id: "",
-            time: new Date().getTime(),
-            error: "",
-            runner: "", // Will be assigned later in the host
-            runnerVersion: getVersion(),
-            assembleExceptions,
-            assembleOK,
-            units: unitResults,
-            sac: [],
-        };
     } catch (e) {
-        consola.error(e);
-        return {
-            context,
-            id: "",
-            time: new Date().getTime(),
-            error: String(e),
-            runner: "",
-            runnerVersion: getVersion(),
-            assembleExceptions: [],
-            assembleOK: false,
-            units: [],
-            sac: [],
-        };
+        result.error = String(e);
+        result.assembleOK = false;
     }
+
+    return result;
 }

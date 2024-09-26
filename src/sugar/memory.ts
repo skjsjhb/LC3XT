@@ -1,6 +1,11 @@
 import { toHex } from "../util/fmt";
 import type { VM } from "./vm";
 
+export type MemoryStat = {
+    read: number;
+    write: number;
+};
+
 /**
  * VM memory provider.
  */
@@ -37,6 +42,16 @@ export class Memory {
     }
 
     /**
+     * Get the stats of the memory.
+     */
+    getStats(): MemoryStat {
+        return {
+            read: this.readCount,
+            write: this.writeCount,
+        };
+    }
+
+    /**
      * Reads the address, ignoring any rules and does not report exceptions.
      */
     readAnyway(addr: number): number {
@@ -64,8 +79,6 @@ export class Memory {
 
         return this.content.get(addr) ?? 0;
     }
-
-    onRead(addr: number, what: (m: Memory) => void) {}
 
     /**
      * Writes to the address.
