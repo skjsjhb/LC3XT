@@ -1,11 +1,14 @@
-import { describe, it, assert } from "vitest";
-import { AssembleContext } from "../src/loli/context";
-import { extractStrings, filterControls, dropComments } from "../src/loli/preprocess";
-
+import { assert, describe, it } from "vitest";
+import { AssembleContext } from "../../src/loli/context";
+import {
+    dropComments,
+    extractStrings,
+    filterControls,
+} from "../../src/loli/preprocess";
 
 describe("Process Strings", () => {
     it("Extract String Literal", () => {
-        const src = ". .STRINGZ \"hello, world\"";
+        const src = '. .STRINGZ "hello, world"';
         const ctx = new AssembleContext(src);
         extractStrings(ctx);
         assert.equal(ctx.strings.length, 1);
@@ -14,7 +17,7 @@ describe("Process Strings", () => {
     });
 
     it("Ignore Unpaired Quotes", () => {
-        const src = ". .STRINGZ \"incomplete";
+        const src = '. .STRINGZ "incomplete';
         const ctx = new AssembleContext(src);
         extractStrings(ctx);
         assert.equal(ctx.strings.length, 0);
@@ -23,10 +26,13 @@ describe("Process Strings", () => {
 
 describe("Process Control Characters", () => {
     it("Filter Control Characters", () => {
-        const src = ". .STRINGZ\r\n\"hello\tworld\"";
+        const src = '. .STRINGZ\r\n"hello\tworld"';
         const ctx = new AssembleContext(src);
         filterControls(ctx);
-        assert.equal(ctx.intermediate.preprocessed, ". .STRINGZ\n\"hello    world\"");
+        assert.equal(
+            ctx.intermediate.preprocessed,
+            '. .STRINGZ\n"hello    world"',
+        );
     });
 });
 

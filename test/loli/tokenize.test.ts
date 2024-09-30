@@ -1,6 +1,6 @@
-import { describe, it, assert } from "vitest";
-import { AssembleContext } from "../src/loli/context";
-import { tokenize } from "../src/loli/tokenize";
+import { assert, describe, it } from "vitest";
+import { AssembleContext } from "../../src/loli/context";
+import { tokenize } from "../../src/loli/tokenize";
 
 describe("Tokenize", () => {
     it("In Line Tokenize", () => {
@@ -11,7 +11,12 @@ describe("Tokenize", () => {
         assert.deepEqual(ctx.intermediate.tokens, [
             { lineNo: 1, labels: [], op: "LEA", args: ["R0", "."] },
             { lineNo: 1, labels: [], op: "PUTS", args: [] },
-            { lineNo: 1, labels: ["LABEL"], op: "ADD", args: ["R0", "R0", "x0"] }
+            {
+                lineNo: 1,
+                labels: ["LABEL"],
+                op: "ADD",
+                args: ["R0", "R0", "x0"],
+            },
         ]);
     });
 
@@ -23,7 +28,12 @@ describe("Tokenize", () => {
         assert.deepEqual(ctx.intermediate.tokens, [
             { lineNo: 1, labels: [], op: "LEA", args: ["R0", "."] },
             { lineNo: 2, labels: [], op: "PUTS", args: [] },
-            { lineNo: 3, labels: ["LABEL"], op: "ADD", args: ["R0", "R0", "x0"] }
+            {
+                lineNo: 3,
+                labels: ["LABEL"],
+                op: "ADD",
+                args: ["R0", "R0", "x0"],
+            },
         ]);
     });
 });

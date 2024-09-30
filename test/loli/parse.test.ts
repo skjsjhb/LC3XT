@@ -1,12 +1,15 @@
 import { assert, describe, it } from "vitest";
-import { AssembleContext } from "../src/loli/context";
-import { buildSymbolTable, parseSemanticInstructions } from "../src/loli/parse";
+import { AssembleContext } from "../../src/loli/context";
+import {
+    buildSymbolTable,
+    parseSemanticInstructions,
+} from "../../src/loli/parse";
 import {
     dropComments,
     extractStrings,
     filterControls,
-} from "../src/loli/preprocess";
-import { tokenize } from "../src/loli/tokenize";
+} from "../../src/loli/preprocess";
+import { tokenize } from "../../src/loli/tokenize";
 
 function prepare(ctx: AssembleContext) {
     filterControls(ctx);
