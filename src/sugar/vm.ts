@@ -203,6 +203,12 @@ export class VM {
         this.regFile[r] = v & 0xffff;
     }
 
+    randomizeReg() {
+        for (let i = 0; i < 8; i++) {
+            this.regFile[i] = (Math.random() * 0xffff) & 0xffff;
+        }
+    }
+
     private loadPSR(a: number) {
         this.mode = (a >> 15) & 1 ? 1 : 0;
         this.condition = a & 0b111;

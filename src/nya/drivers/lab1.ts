@@ -34,6 +34,7 @@ const driver: TestExecutor = (vm, env) => {
         time: 0,
     };
 
+    vm.randomizeReg();
     vm.setReg(0, input);
     vm.setPC(0x3000);
     vm.run();
