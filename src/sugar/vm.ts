@@ -366,7 +366,7 @@ export class VM {
         const func2 = (instr >> 11) & 1;
         const imm5 = toSigned(instr & 0b11111, 5);
         const pcOffset9 = toSigned(instr & 0x1ff, 9);
-        const pcOffset11 = toSigned(instr & 0x7ff, 9);
+        const pcOffset11 = toSigned(instr & 0x7ff, 11);
         const offset6 = toSigned(instr & 0x3f, 6);
         const trapVec = instr & 0xff;
 
