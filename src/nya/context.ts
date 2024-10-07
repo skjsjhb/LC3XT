@@ -26,7 +26,7 @@ export type TestResult = {
     units: TestUnitResult[];
 };
 
-export type TestUnitStatus = "AC" | "WA" | "RE" | "TLE" | "IEE";
+export type TestUnitStatus = "AC" | "WA" | "RE" | "TLE" | "IEE" | "SE";
 
 export type TestUnitResult = {
     status: TestUnitStatus;

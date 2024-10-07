@@ -3,10 +3,33 @@ import type { TestUnitResult } from "../context";
 import { type TestExecutor, translateHaltReason } from "../drive";
 
 const driver: TestExecutor = (vm, env) => {
+    const res: TestUnitResult = {
+        status: "AC",
+        output: {
+            expected: "",
+            received: "",
+        },
+        stats: {
+            instrCount: 0,
+            memWrite: 0,
+            memRead: 0,
+        },
+        input: "",
+        runtimeExceptions: [],
+        time: 0,
+    };
+
+    const stuId = String(env.stuId);
+
+    if (!/^[A-Z]{2}[0-9]{8}$/i.test(stuId)) {
+        res.status = "SE";
+        return res;
+    }
+
     const num = Math.round(Math.random() * 0xff);
     const secret =
         Number.parseInt(
-            String(env.stuId)
+            stuId
                 .split("")
                 .map(it => {
                     if ("13579".includes(it)) return "1";
@@ -18,21 +41,8 @@ const driver: TestExecutor = (vm, env) => {
         ) & 0xff;
     const input = (num ^ secret) & 0xff;
 
-    const res: TestUnitResult = {
-        status: "AC",
-        output: {
-            expected: toHex(num),
-            received: "",
-        },
-        stats: {
-            instrCount: 0,
-            memWrite: 0,
-            memRead: 0,
-        },
-        input: toHex(input),
-        runtimeExceptions: [],
-        time: 0,
-    };
+    res.output.expected = toHex(num);
+    res.input = toHex(input);
 
     vm.randomizeReg();
     vm.setReg(0, input);
