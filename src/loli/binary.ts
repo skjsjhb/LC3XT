@@ -7,6 +7,8 @@ import type { AssembleContext } from "./context";
 export function createBinary(context: AssembleContext) {
     let bin: number[] = [];
 
+    let hasHalt = false;
+
     function toComplement(n: number, bits: number): number {
         return encodeComplement(context, n, bits);
     }
@@ -261,6 +263,7 @@ export function createBinary(context: AssembleContext) {
 
             case "HALT": {
                 bin.push((0b1111 << 12) | 0x25);
+                hasHalt = true;
                 break;
             }
         }
@@ -268,6 +271,10 @@ export function createBinary(context: AssembleContext) {
 
     if (bin.length > 0) {
         finalizeProgram();
+    }
+
+    if (!hasHalt) {
+        context.raise("no-halt", {});
     }
 }
 

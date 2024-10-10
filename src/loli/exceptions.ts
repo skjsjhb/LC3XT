@@ -25,7 +25,8 @@ export type AssembleException =
     | "number-bits-overflow"
     | "empty-program"
     | "negative-trap"
-    | "label-redefined";
+    | "label-redefined"
+    | "no-halt";
 
 const exceptionLevelMap: Record<AssembleException, AssembleExceptionLevel> = {
     "unsupported-escape": "warn",
@@ -51,6 +52,7 @@ const exceptionLevelMap: Record<AssembleException, AssembleExceptionLevel> = {
     "empty-program": "warn",
     "negative-trap": "warn",
     "label-redefined": "warn",
+    "no-halt": "warn",
 };
 
 export type AssembleExceptionDetails = {
@@ -150,6 +152,8 @@ export type AssembleExceptionDetails = {
     "label-redefined": {
         label: string;
     };
+
+    "no-halt": Record<never, never>;
 };
 
 export interface AssembleExceptionSummary {
