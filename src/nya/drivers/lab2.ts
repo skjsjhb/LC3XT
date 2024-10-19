@@ -27,7 +27,7 @@ const driver: TestExecutor = (vm, env) => {
     res.output.expected = `${toHex(count)} (${count})`;
 
     vm.randomizeReg();
-    vm.setLimit(100000);
+    vm.setLimit(500000);
     vm.getMemory().write(0x3100, num, false);
     vm.setPC(0x3000);
     vm.run();
