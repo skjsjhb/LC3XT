@@ -14,7 +14,8 @@ export type RuntimeException =
     | "suspicious-empty-branch"
     | "suspicious-system-stack"
     | "suspicious-user-stack"
-    | "possible-stack-underflow";
+    | "possible-stack-underflow"
+    | "uninitialized-register";
 
 const exceptionLevelMap: Record<RuntimeException, RuntimeExceptionLevel> = {
     "unloaded-memory": "error",
@@ -30,6 +31,7 @@ const exceptionLevelMap: Record<RuntimeException, RuntimeExceptionLevel> = {
     "suspicious-system-stack": "warn",
     "suspicious-user-stack": "warn",
     "possible-stack-underflow": "warn",
+    "uninitialized-register": "warn",
 };
 
 export type RuntimeExceptionDetails = {
@@ -75,6 +77,9 @@ export type RuntimeExceptionDetails = {
     "possible-stack-underflow": {
         address: string;
         expected: string;
+    };
+    "uninitialized-register": {
+        id: number;
     };
 };
 

@@ -49,11 +49,13 @@ const driver: TestExecutor = (vm, env) => {
     vm.setPC(0x3000);
     vm.run();
 
-    const out = vm.getReg(3);
+    const out = vm.getRegAnyway(3);
     res.output.received = toHex(out);
 
     res.runtimeExceptions = vm.getExceptions();
     res.status = translateHaltReason(vm.getHaltReason());
+    res.time = new Date().getTime();
+    res.stats = vm.getStat();
 
     if (res.status !== "AC") {
         return res;
@@ -64,9 +66,6 @@ const driver: TestExecutor = (vm, env) => {
     } else {
         res.status = "WA";
     }
-
-    res.time = new Date().getTime();
-    res.stats = vm.getStat();
 
     return res;
 };

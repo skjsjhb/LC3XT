@@ -66,6 +66,8 @@ export class VM {
 
     private nativeIntHandlers = new Map<number, () => void>();
 
+    private regInitialized = Array(8).fill(false);
+
     constructor(debug?: DebugBundle, strict = false) {
         if (debug) {
             this.debugInfo = debug;
@@ -191,7 +193,14 @@ export class VM {
         };
     }
 
+    getRegAnyway(r: number): number {
+        return this.regFile[r];
+    }
+
     getReg(r: number): number {
+        if (!this.regInitialized[r]) {
+            this.raise("uninitialized-register", { id: r });
+        }
         return this.regFile[r];
     }
 
@@ -201,6 +210,7 @@ export class VM {
 
     setReg(r: number, v: number) {
         this.regFile[r] = v & 0xffff;
+        this.regInitialized[r] = true;
     }
 
     randomizeReg() {
@@ -391,7 +401,12 @@ export class VM {
                 let dv: number;
                 if (func1) {
                     // AND.I
-                    dv = this.getReg(sr1) & imm5;
+                    if (imm5 === 0) {
+                        // Optimize AND with 0 to suppress register warnings
+                        dv = 0;
+                    } else {
+                        dv = this.getReg(sr1) & imm5;
+                    }
                 } else {
                     // AND.R
                     dv = this.getReg(sr1) & this.getReg(sr2);
