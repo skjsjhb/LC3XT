@@ -219,6 +219,12 @@ export class VM {
         }
     }
 
+    clearReg() {
+        for (let i = 0; i < 8; i++) {
+            this.regFile[i] = 0;
+        }
+    }
+
     private loadPSR(a: number) {
         this.mode = (a >> 15) & 1 ? 1 : 0;
         this.condition = a & 0b111;
