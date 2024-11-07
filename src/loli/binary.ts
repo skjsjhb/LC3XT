@@ -9,8 +9,8 @@ export function createBinary(context: AssembleContext) {
 
     let hasHalt = false;
 
-    function toComplement(n: number, bits: number): number {
-        return encodeComplement(context, n, bits);
+    function toComplement(n: number, bits: number, signed = true): number {
+        return encodeComplement(context, n, bits, signed);
     }
 
     let firstProgram = true;
@@ -70,7 +70,7 @@ export function createBinary(context: AssembleContext) {
                 if (!firstProgram) {
                     finalizeProgram();
                 }
-                origin = toComplement(si.imm, 16);
+                origin = toComplement(si.imm, 16, false);
                 firstProgram = false;
                 break;
 
@@ -96,7 +96,8 @@ export function createBinary(context: AssembleContext) {
 
             case ".FILL":
                 markDataMemory();
-                bin.push(toComplement(si.imm, 16));
+                if (si.imm < 0) si.imm = si.imm & (2 ** 16 - 1);
+                bin.push(toComplement(si.imm, 16, false));
                 break;
 
             case "ADD": {
@@ -282,13 +283,14 @@ function encodeComplement(
     context: AssembleContext,
     n: number,
     bits: number,
+    signed = true,
 ): number {
-    const uLimit = 2 ** (bits - 1) - 1;
-    const bLimit = -(2 ** (bits - 1));
+    const uLimit = signed ? 2 ** (bits - 1) - 1 : 2 ** bits - 1;
+    const bLimit = signed ? -(2 ** (bits - 1)) : 0;
     if (n > uLimit || n < bLimit) {
         context.raise("number-bits-overflow", { num: n, bits });
         return 0;
     }
-    const mask = 2 ** bits - 1; // The highest bit should be 0
+    const mask = signed ? 2 ** bits - 1 : 2 ** (bits + 1) - 1; // The highest bit should be 0
     return n & mask;
 }
