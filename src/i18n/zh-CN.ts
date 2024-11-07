@@ -72,6 +72,8 @@ export default {
             },
         },
         exception: {
+            limit: "（消息数目超出上限，只显示前 {{limit}} 条）",
+
             asm: {
                 "unsupported-escape": "无法转义字符串 {{str}}",
                 "missing-args": "指令 {{op}} 缺少参数",

@@ -10,10 +10,15 @@ export function initNyaStore(path: string) {
     db = sqlite(path);
     db.exec("CREATE TABLE IF NOT EXISTS lastId(id INT);"); // DB for stats
     db.exec(
-        "CREATE TABLE IF NOT EXISTS records(id CHARACTER(16) PRIMARY KEY, content TEXT);",
+        `CREATE TABLE IF NOT EXISTS records(
+            id CHARACTER(16) PRIMARY KEY,
+            session CHARACTER(32),
+            meta TEXT,
+            source TEXT
+        );`,
     ); // DB for test records
     db.exec(
-        "CREATE TABLE IF NOT EXISTS accepted_records(id CHARACTER(16) PRIMARY KEY, content TEXT);",
+        "CREATE TABLE IF NOT EXISTS accepted_records(id CHARACTER(16) PRIMARY KEY);",
     ); // DB for SAC
 
     const res = db.prepare("SELECT id FROM lastId;").get() as { id: number };
@@ -22,20 +27,31 @@ export function initNyaStore(path: string) {
 
 export function getResult(id: string): TestResult | null {
     const res = db
-        .prepare("SELECT content FROM records WHERE id = ?")
-        .get(id) as { content: string };
+        .prepare("SELECT session, meta, source FROM records WHERE id = ?")
+        .get(id) as { session: string; meta: string; source: string };
     if (!res) return null;
-    return JSON.parse(res.content);
+    const out = JSON.parse(res.meta);
+    out.context.session = res.session;
+    out.context.source = res.source;
+    return out;
 }
 
 export function enrollResult(id: string, rec: TestResult) {
-    db.prepare("INSERT INTO records VALUES(?,?);").run(id, JSON.stringify(rec));
+    const session = rec.context.session;
+    const source = rec.context.source;
+    rec.context.source = "";
+    rec.context.session = "";
+
+    db.prepare("INSERT INTO records VALUES(?,?,?,?);").run(
+        id,
+        session,
+        JSON.stringify(rec),
+        source,
+    );
+
     consola.info(`Enrolled record ${id}`);
     if (rec.units.length > 0 && rec.units.every(it => it.status === "AC")) {
-        db.prepare("INSERT INTO accepted_records VALUES(?,?);").run(
-            id,
-            JSON.stringify(rec),
-        );
+        db.prepare("INSERT INTO accepted_records VALUES(?);").run(id);
         consola.info(`Enrolled record ${id} for SAC`);
     }
 }
@@ -45,8 +61,8 @@ export function eachAcceptedRecord(
 ) {
     const itr = db.prepare("SELECT * FROM accepted_records").all();
     for (const rec of itr) {
-        const { id, content } = rec as { id: string; content: string };
-        what(id, JSON.parse(content));
+        const { id } = rec as { id: string };
+        what(id, getResult(id) as TestResult);
     }
 }
 
@@ -55,5 +71,5 @@ export function createId(): string {
     db.exec("DELETE FROM lastId;");
     db.prepare("INSERT INTO lastId VALUES(?);").run(lastId);
 
-    return `S${lastId.toString().padStart(8, "0")}`;
+    return `K${lastId.toString().padStart(8, "0")}`;
 }

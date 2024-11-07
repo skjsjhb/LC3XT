@@ -22,6 +22,8 @@ export type VMStat = {
     memWrite: number;
 };
 
+const EXCEPTION_LIMIT = 100;
+
 /**
  * The main LC-3 VM.
  */
@@ -37,7 +39,7 @@ export class VM {
 
     private mode: 0 | 1 = 0;
 
-    private exceptions: RuntimeExceptionSummary[] = [];
+    private exceptions: Set<RuntimeExceptionSummary> = new Set();
 
     private instrCount = 0;
     private limit = 10000;
@@ -253,7 +255,7 @@ export class VM {
      * Gets a copy of present exceptions.
      */
     getExceptions(): RuntimeExceptionSummary[] {
-        return this.exceptions.concat();
+        return [...this.exceptions];
     }
 
     /**
@@ -319,6 +321,19 @@ export class VM {
         type: T,
         detail: RuntimeExceptionDetails[T],
     ): void {
+        if (this.exceptions.size > EXCEPTION_LIMIT) return;
+
+        if (this.exceptions.size === EXCEPTION_LIMIT) {
+            this.exceptions.add({
+                addr: 0,
+                instr: 0,
+                // @ts-ignore
+                type: "",
+                message: t("exception.limit", { limit: EXCEPTION_LIMIT }),
+            });
+            return;
+        }
+
         const addr = this.pc - 1; // PC has already incremented when reporting
         const instr = this.memory.readAnyway(addr);
         const ex = buildRuntimeException(addr, instr, type, detail);
@@ -327,15 +342,16 @@ export class VM {
         if (lineNo >= 0) {
             ex.message += t("debug.source-pos", { line: lineNo });
         }
-
-        this.exceptions.push(ex);
+        this.exceptions.add(ex);
     }
 
     hasError() {
         if (this.strict) {
-            return this.exceptions.length > 0;
+            return this.exceptions.size > 0;
         }
-        return this.exceptions.find(it => it.level === "error") !== undefined;
+        return (
+            [...this.exceptions].find(it => it.level === "error") !== undefined
+        );
     }
 
     setLimit(n: number) {
