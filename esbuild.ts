@@ -16,7 +16,6 @@ await esbuild.build({
         nya: "src/nya/host.ts",
         "proc-launcher": "src/nya/runners/proc.ts",
         "ws-launcher": "src/nya/runners/ws.ts",
-        migrate: "src/migrate.ts",
     },
     bundle: true,
     minify: !isDev,
