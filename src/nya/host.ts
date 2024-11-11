@@ -6,7 +6,13 @@ import { getVersion } from "../util/version";
 import type { TestContext } from "./context";
 import { execTestRun, initWSRunnerHost } from "./runner";
 import { reportSimilarity } from "./sac";
-import { createId, enrollResult, getResult, initNyaStore } from "./store";
+import {
+    createId,
+    enrollResult,
+    getIdsBySession,
+    getResult,
+    initNyaStore,
+} from "./store";
 
 async function main() {
     await i18nInit("zh-CN");
@@ -43,6 +49,11 @@ async function main() {
 
     app.get("/commit", (req, res) => {
         res.status(200).send(process.env.GIT_TAG).end();
+    });
+
+    app.get("/whose/:session", (req, res) => {
+        const { session } = req.params;
+        res.status(200).json(getIdsBySession(session)).end();
     });
 
     app.get("/record/:id", (req, res) => {

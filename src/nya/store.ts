@@ -69,6 +69,14 @@ export function eachAcceptedRecord(
     }
 }
 
+export function getIdsBySession(session: string): string[] {
+    const res = db
+        .prepare("SELECT id FROM records WHERE session = ?;")
+        .all(session) as { id: string }[] | null;
+    if (res == null) return [];
+    return res.map(it => it.id);
+}
+
 export function createId(): string {
     lastId++;
     db.exec("DELETE FROM lastId;");
