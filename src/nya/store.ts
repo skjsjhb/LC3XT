@@ -57,12 +57,15 @@ export function enrollResult(id: string, rec: TestResult) {
 }
 
 export function eachAcceptedRecord(
-    what: (id: string, res: TestResult) => void,
+    what: (id: string, res: { source: string; session: string }) => void,
 ) {
-    const itr = db.prepare("SELECT * FROM accepted_records").all();
+    const itr = db.prepare("SELECT id FROM accepted_records").all();
     for (const rec of itr) {
         const { id } = rec as { id: string };
-        what(id, getResult(id) as TestResult);
+        const res = db
+            .prepare("SELECT source, session FROM records WHERE id = ?;")
+            .get(id) as { source: string; session: string };
+        what(id, res);
     }
 }
 

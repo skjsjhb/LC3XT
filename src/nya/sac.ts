@@ -14,7 +14,7 @@ export function reportSimilarity(res: TestResult): SACSimilarityRecord[] {
     const limit = 20;
     const tolerance = 0.2;
 
-    eachAcceptedRecord((id, { context: { session, source } }) => {
+    eachAcceptedRecord((id, { source, session }) => {
         // Binary is not tested yet
         if (session === res.context.session) return; // Skip submits with the same fingerprint
 
