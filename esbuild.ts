@@ -15,7 +15,6 @@ await esbuild.build({
         sugar: "src/cli/sugar.ts",
         nya: "src/nya/host.ts",
         "proc-launcher": "src/nya/runners/proc.ts",
-        "ws-launcher": "src/nya/runners/ws.ts",
     },
     bundle: true,
     minify: !isDev,

@@ -4,7 +4,7 @@ import express, { json } from "express";
 import { i18nInit } from "../i18n/i18n";
 import { getVersion } from "../util/version";
 import type { TestContext } from "./context";
-import { execTestRun, initWSRunnerHost } from "./runner";
+import { execTestRun } from "./runner";
 import { reportSimilarity } from "./sac";
 import {
     createId,
@@ -18,7 +18,6 @@ async function main() {
     await i18nInit("zh-CN");
     const dbPath = process.env.NYA_DB_PATH || "nya.db";
     initNyaStore(dbPath);
-    initWSRunnerHost(7902);
 
     const port = 7901;
     const app = express();
