@@ -3,10 +3,10 @@ import type { DebugBundle } from "../debug/debug";
 import { toHex } from "../util/fmt";
 import { waitEventLoop } from "../util/sys";
 import {
+    buildRuntimeException,
     type RuntimeException,
     type RuntimeExceptionDetails,
-    type RuntimeExceptionSummary,
-    buildRuntimeException,
+    type RuntimeExceptionSummary
 } from "./exceptions";
 import { Memory } from "./memory";
 
@@ -218,12 +218,14 @@ export class VM {
     randomizeReg() {
         for (let i = 0; i < 8; i++) {
             this.regFile[i] = (Math.random() * 0xffff) & 0xffff;
+            this.regInitialized[i] = false;
         }
     }
 
     clearReg() {
         for (let i = 0; i < 8; i++) {
             this.regFile[i] = 0;
+            this.regInitialized[i] = true;
         }
     }
 
