@@ -6,13 +6,9 @@ import { getVersion } from "../util/version";
 import type { TestContext } from "./context";
 import { execTestRun } from "./runner";
 import { reportSimilarity } from "./sac";
-import {
-    createId,
-    enrollResult,
-    getIdsBySession,
-    getResult,
-    initNyaStore,
-} from "./store";
+import { createId, enrollResult, getIdsBySession, getResult, initNyaStore } from "./store";
+import { type AssemblerTestCase, requestAssemblerTest } from "./assembler-test";
+import { loli } from "../loli/api";
 
 async function main() {
     await i18nInit("zh-CN");
@@ -69,7 +65,54 @@ async function main() {
         }
     });
 
+    const testSessions = new Map<string, AssemblerTestCase>();
+
+    app.get("/acquire-assembler-test", (_, res) => {
+        const test = requestAssemblerTest();
+        testSessions.set(test.session, test);
+        console.log(test.session);
+        setTimeout(() => {
+            testSessions.delete(test.session);
+        }, 60 * 1000);
+        res.status(200).json(test).end();
+    });
+
+    app.post("/commit-assembler-test", (req, res) => {
+        console.log(req.body);
+        const { session, results } = req.body as { session: string, results: string[] };
+        const origin = testSessions.get(session);
+        console.log(session);
+        console.log(results);
+        if (!origin) {
+            res.status(404).end();
+            return;
+        }
+
+        testSessions.delete(session);
+
+        let i = -1;
+        for (const p of origin.test) {
+            i++;
+            const ctx = loli.build(p);
+            if (ctx.hasError()) continue;
+            const strippedBin = ctx.outputBinary()[0];
+            strippedBin.shift();
+            if (strippedBin.join("\n").trim() !== results[i].trim()) {
+                res.status(418).json(
+                    {
+                        source: p,
+                        expected: strippedBin.join("\n"),
+                        received: results[i]
+                    }
+                ).end();
+                return;
+            }
+        }
+        res.status(204).end();
+    });
+
     app.listen(port);
     consola.info(`Server listening at ${port}`);
 }
+
 void main();
