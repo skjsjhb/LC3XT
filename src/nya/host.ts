@@ -70,7 +70,6 @@ async function main() {
     app.get("/acquire-assembler-test", (_, res) => {
         const test = requestAssemblerTest();
         testSessions.set(test.session, test);
-        console.log(test.session);
         setTimeout(() => {
             testSessions.delete(test.session);
         }, 60 * 1000);
@@ -78,11 +77,8 @@ async function main() {
     });
 
     app.post("/commit-assembler-test", (req, res) => {
-        console.log(req.body);
         const { session, results } = req.body as { session: string, results: string[] };
         const origin = testSessions.get(session);
-        console.log(session);
-        console.log(results);
         if (!origin) {
             res.status(404).end();
             return;
