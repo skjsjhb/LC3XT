@@ -25,7 +25,8 @@ function createStr(): [string, number] {
     if (randomBinary()) {
         return [createPalindrome(), 1];
     }
-    return [createOther(), 0];
+    const s = createOther();
+    return [s, s.split("").reverse().join("") === s ? 1 : 0];
 }
 
 const driver: TestExecutor = (vm, env) => {
