@@ -3,7 +3,7 @@ import type { TestUnitResult } from "../context";
 import { type TestExecutor, translateHaltReason } from "../drive";
 
 const nano = customAlphabet(
-    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
+    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 );
 
 function randomBinary() {
@@ -18,7 +18,7 @@ function createPalindrome() {
 }
 
 function createOther() {
-    return nano(Math.round(Math.random() * 99));
+    return nano(Math.round(Math.random() * 97) + 2);
 }
 
 function createStr(): [string, number] {
@@ -33,16 +33,16 @@ const driver: TestExecutor = (vm, env) => {
         status: "AC",
         output: {
             expected: "",
-            received: "",
+            received: ""
         },
         stats: {
             instrCount: 0,
             memWrite: 0,
-            memRead: 0,
+            memRead: 0
         },
         input: "",
         runtimeExceptions: [],
-        time: 0,
+        time: 0
     };
 
     const [str, id] = createStr();
