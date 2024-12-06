@@ -3,7 +3,7 @@ import { type TestExecutor, translateHaltReason } from "../drive";
 
 
 function createRandInput(): string {
-    return Array.from({ length: Math.round(Math.random() * 90) + 10 }, () => Math.random() >= 0.5 ? "1" : "0").join("") + "y";
+    return Array.from({ length: Math.round(Math.random() * 95) + 1 }, () => Math.random() >= 0.5 ? "1" : "0").join("") + (Math.random() >= 0.5 ? "101y" : "y");
 }
 
 function matchStr(s: string): number {
