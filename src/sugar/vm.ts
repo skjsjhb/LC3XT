@@ -63,7 +63,7 @@ export class VM {
     private debugInfo: DebugBundle = {
         execMemory: new Set(),
         symbols: new Map(),
-        lineMap: new Map(),
+        lineMap: new Map()
     };
 
     private nativeIntHandlers = new Map<number, () => void>();
@@ -159,9 +159,9 @@ export class VM {
     }
 
     private setCondition(n: number) {
-        if (n > 0) this.condition = 0b001;
-        if (n === 0) this.condition = 0b010;
-        if (n < 0) this.condition = 0b100;
+        if (n & (1 << 15)) this.condition = 0b100;
+        else if (n === 0) this.condition = 0b010;
+        else this.condition = 0b001;
     }
 
     private stackPush(n: number) {
@@ -176,7 +176,7 @@ export class VM {
         if (addr >= stackLimit) {
             this.raise("possible-stack-underflow", {
                 address: this.interpretAddress(addr),
-                expected: this.interpretAddress(stackLimit),
+                expected: this.interpretAddress(stackLimit)
             });
         }
         this.setReg(6, addr + 1);
@@ -191,7 +191,7 @@ export class VM {
         return {
             instrCount: this.instrCount,
             memRead: memStats.read,
-            memWrite: memStats.write,
+            memWrite: memStats.write
         };
     }
 
@@ -321,7 +321,7 @@ export class VM {
      */
     raise<T extends RuntimeException>(
         type: T,
-        detail: RuntimeExceptionDetails[T],
+        detail: RuntimeExceptionDetails[T]
     ): void {
         if (this.exceptions.size > EXCEPTION_LIMIT) return;
 
@@ -331,7 +331,7 @@ export class VM {
                 instr: 0,
                 // @ts-ignore
                 type: "",
-                message: t("exception.limit", { limit: EXCEPTION_LIMIT }),
+                message: t("exception.limit", { limit: EXCEPTION_LIMIT })
             });
             return;
         }
@@ -388,7 +388,7 @@ export class VM {
         ) {
             this.raise("data-execution", {
                 address: this.interpretAddress(this.pc - 1),
-                content: toHex(instr),
+                content: toHex(instr)
             });
         }
 
@@ -446,7 +446,7 @@ export class VM {
                     // DR contains NZP flags
                     this.raise("suspicious-empty-branch", {
                         address: this.interpretAddress(this.pc - 1),
-                        instr: toHex(instr),
+                        instr: toHex(instr)
                     });
                 }
 
@@ -555,7 +555,7 @@ export class VM {
             default: {
                 this.raise("invalid-instruction", {
                     address: this.interpretAddress(this.pc - 1),
-                    instr: toHex(instr),
+                    instr: toHex(instr)
                 });
             }
         }
@@ -571,7 +571,7 @@ export class VM {
     endInterrupt() {
         if (this.isUser()) {
             this.raise("instr-permission-denied", {
-                address: this.interpretAddress(this.pc - 1),
+                address: this.interpretAddress(this.pc - 1)
             });
             return;
         }
