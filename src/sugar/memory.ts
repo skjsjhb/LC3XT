@@ -29,14 +29,14 @@ export class Memory {
         } else if (this.vm.isUser()) {
             if (addr < 0x3000) {
                 this.vm.raise("memory-permission-denied", {
-                    address: toHex(addr),
+                    address: toHex(addr)
                 });
             } else if (addr >= 0xfe00) {
                 this.vm.raise("device-user-access", {
-                    address: toHex(addr),
+                    address: toHex(addr)
                 });
             }
-        } else if (addr >= 0xfe00 && this.deviceAddresses.has(addr)) {
+        } else if (addr >= 0xfe00 && !this.deviceAddresses.has(addr)) {
             this.vm.raise("mmio-no-device", { address: toHex(addr) });
         }
     }
@@ -47,7 +47,7 @@ export class Memory {
     getStats(): MemoryStat {
         return {
             read: this.readCount,
-            write: this.writeCount,
+            write: this.writeCount
         };
     }
 
@@ -65,7 +65,7 @@ export class Memory {
         this.checkAddress(addr);
 
         // Extra check for reading
-        if (!this.content.has(addr)) {
+        if (!this.content.has(addr) && !this.deviceAddresses.has(addr)) {
             this.vm.raise("unloaded-memory", { address: toHex(addr) });
         }
 

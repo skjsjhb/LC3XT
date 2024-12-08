@@ -312,6 +312,7 @@ export class VM {
         bin.shift();
         for (const i of bin) {
             this.memory.write(addr, i, false);
+            this.debugInfo.execMemory.add(addr);
             addr++;
         }
     }

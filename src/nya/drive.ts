@@ -6,6 +6,7 @@ import lab2 from "./drivers/lab2";
 import lab3 from "./drivers/lab3";
 import lab4 from "./drivers/lab4";
 import lab5 from "./drivers/lab5";
+import lab6 from "./drivers/lab6";
 
 export type TestExecutor = (
     vm: VM,
@@ -46,6 +47,11 @@ const drivers: Record<string, TestDriver> = {
     lab5: {
         repeat: 10,
         exec: lab5
+    },
+
+    lab6: {
+        repeat: 1,
+        exec: lab6
     }
 };
 
