@@ -58,7 +58,7 @@ const driver: TestExecutor = (vm, env, i) => {
     const out = vm.getOutput();
     res.output.received = out;
 
-    const outNum = parseInt(out.match(/[1-9][0-9]*/)?.[0] ?? "-1");
+    const outNum = parseInt(out.match(/[0-9]+/)?.[0] ?? "-1");
 
     res.runtimeExceptions = vm.getExceptions();
     res.status = translateHaltReason(vm.getHaltReason());
