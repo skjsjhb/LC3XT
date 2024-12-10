@@ -16,14 +16,14 @@ export function runTest(context: TestContext): TestResult {
         assembleExceptions: [],
         assembleOK: true,
         units: [],
-        sac: [],
+        sac: []
     };
     try {
         let binary: string[][] = [];
         let debugBundle: DebugBundle = {
             execMemory: new Set(),
             symbols: new Map(),
-            lineMap: new Map(),
+            lineMap: new Map()
         };
 
         const driver = getTestDriver(context.driver);
@@ -44,14 +44,14 @@ export function runTest(context: TestContext): TestResult {
                         it
                             .split("\n")
                             .map(it => it.trim())
-                            .filter(it => it.length > 0),
+                            .filter(it => it.length > 0)
                     );
                 break;
             }
         }
 
         result.assembleOK = result.assembleExceptions.every(
-            it => it.level !== "error",
+            it => it.level !== "error"
         );
 
         if (result.assembleOK) {
@@ -64,7 +64,7 @@ export function runTest(context: TestContext): TestResult {
 
                     vm.loadProgram(p);
                 }
-                result.units.push(driver.exec(vm, context.env));
+                result.units.push(driver.exec(vm, context.env, i));
             }
         }
     } catch (e) {

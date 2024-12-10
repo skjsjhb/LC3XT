@@ -10,7 +10,8 @@ import lab6 from "./drivers/lab6";
 
 export type TestExecutor = (
     vm: VM,
-    env: Record<string, string>
+    env: Record<string, string>,
+    index: number
 ) => TestUnitResult;
 
 export type TestDriver = {

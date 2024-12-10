@@ -20,7 +20,7 @@ function matchStr(s: string): number {
     return a;
 }
 
-const driver: TestExecutor = (vm, env) => {
+const driver: TestExecutor = (vm, env, i) => {
     const res: TestUnitResult = {
         status: "AC",
         output: {
@@ -37,7 +37,7 @@ const driver: TestExecutor = (vm, env) => {
         time: 0
     };
 
-    const s = createRandInput();
+    const s = i === 0 ? "0010101010101010101010101011101010101010101110101y" : createRandInput();
 
     res.input = s;
 
