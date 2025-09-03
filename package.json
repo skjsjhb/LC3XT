@@ -34,7 +34,6 @@
     },
     "dependencies": {
         "arg": "^5.0.2",
-        "bcrypt": "^6.0.0",
         "consola": "^3.2.3",
         "cors": "^2.8.5",
         "express": "^4.21.0",
