@@ -1,5 +1,4 @@
 import i18next from "i18next";
-import enUS from "./en-US";
 import zhCN from "./zh-CN";
 
 let initialized = false;
@@ -13,12 +12,11 @@ export async function i18nInit(lang = "") {
     await i18next.init({
         lng,
         resources: {
-            "en-US": enUS,
-            "zh-CN": zhCN,
+            "zh-CN": zhCN
         },
-        fallbackLng: "en-US",
+        fallbackLng: "zh-CN",
         interpolation: {
-            escapeValue: false,
-        },
+            escapeValue: false
+        }
     });
 }

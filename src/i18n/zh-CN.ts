@@ -30,7 +30,7 @@ export default {
                 "has-warn": "在第 {{lineNo}} 行发现警告：{{msg}}",
                 "has-error": "在第 {{lineNo}} 行发现错误：{{msg}}",
                 error: "侦测到不可恢复错误，请先修正代码再尝试汇编",
-                "writing-file": "正在写入文件 {{file}}",
+                "writing-file": "正在写入文件 {{file}}"
             },
             sugar: {
                 locale: "侦测到的语言为 {{lang}}",
@@ -45,9 +45,9 @@ export default {
                     "-l, --lang ...        显式设置语言\n" +
                     "-g, --debug ...       为程序附加调试信息\n" +
                     "-c, --limit ...       设置指令数限制\n" +
+                    "-s, --strict          不忽略任何警告，将其按错误报告\n" +
                     "\n" +
                     "-b, --boot ...        指定起始地址\n" +
-                    "-s, --strict          不忽略任何警告，将其按错误报告\n" +
                     "                      对于用户程序，使用 0x3000\n" +
                     "                      对于系统程序，使用 0x0200\n" +
                     "\n" +
@@ -68,8 +68,8 @@ export default {
                 "vm-exit-error": "虚拟机未正常关闭",
                 "vm-output": "程序的输出如下",
                 "no-debug-bundle":
-                    "若要获得更详细的消息，请用 --debug 附加二进制文件的调试信息",
-            },
+                    "若要获得更详细的消息，请用 --debug 附加二进制文件的调试信息"
+            }
         },
         exception: {
             limit: "（消息数目超出上限，只显示前 {{limit}} 条）",
@@ -108,7 +108,7 @@ export default {
                 "negative-trap":
                     "陷阱向量是无符号数，但是发现了 {{vec}}，将按其补码编码",
                 "label-redefined": "标签 {{label}} 已经定义过了",
-                "no-halt": "程序没有 HALT 指令，将不会正常终止",
+                "no-halt": "程序没有 HALT 指令，将不会正常终止"
             } satisfies Record<AssembleException, string>,
 
             rt: {
@@ -134,14 +134,14 @@ export default {
                     "用户栈地址 {{address}} 不应位于系统空间或映射 I/O 区域中",
                 "possible-stack-underflow":
                     "栈顶指针位置异常，应当在 {{expected}} 以下，但当前值是 {{address}}",
-                "uninitialized-register": "寄存器 R{{id}} 在使用前未初始化",
-            } satisfies Record<RuntimeException, string>,
+                "uninitialized-register": "寄存器 R{{id}} 在使用前未初始化"
+            } satisfies Record<RuntimeException, string>
         },
 
         debug: {
-            "source-pos": "（请检查源代码第 {{line}} 行）",
+            "source-pos": "（请检查源代码第 {{line}} 行）"
         },
 
-        nya: {},
-    },
+        nya: {}
+    }
 };

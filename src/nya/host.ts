@@ -3,19 +3,19 @@ import cors from "cors";
 import express, { json } from "express";
 import { i18nInit } from "../i18n/i18n";
 import { getVersion } from "../util/version";
-import type { TestContext } from "./context";
-import { execTestRun } from "./runner";
-import { reportSimilarity } from "./sac";
-import { createId, enrollResult, getIdsBySession, getResult, initNyaStore } from "./store";
+import type { TestInput } from "./context";
+import { createId, enrollResult, getResult, initNyaStore } from "./store";
 import { type AssemblerTestCase, requestAssemblerTest } from "./assembler-test";
 import { loli } from "../loli/api";
+import { runner } from "./runner";
 
 async function main() {
     await i18nInit("zh-CN");
-    const dbPath = process.env.NYA_DB_PATH || "nya.db";
-    initNyaStore(dbPath);
+
+    initNyaStore(process.env.NYA_DB_PATH || "nya.v0.db");
 
     const port = 7901;
+
     const app = express();
     app.use(cors());
     app.use(json());
@@ -23,18 +23,17 @@ async function main() {
     const pendingTests = new Set<string>();
 
     app.post("/submit", async (req, res) => {
-        const ctx = req.body as TestContext;
+        const ctx = req.body as TestInput;
 
         const id = createId();
         res.status(200).send(id).end();
 
         pendingTests.add(id);
-        const r = await execTestRun(ctx);
-        if (r.units.length > 0 && r.units.every(it => it.status === "AC")) {
-            r.sac = reportSimilarity(r);
-        }
 
-        enrollResult(id, r);
+        const r = await runner.evaluate(ctx);
+        r.id = id;
+        enrollResult(r);
+
         pendingTests.delete(id);
     });
 
@@ -46,10 +45,10 @@ async function main() {
         res.status(200).send(process.env.GIT_TAG).end();
     });
 
-    app.get("/whose/:session", (req, res) => {
-        const { session } = req.params;
-        res.status(200).json(getIdsBySession(session)).end();
-    });
+    // app.get("/whose/:session", (req, res) => {
+    //     const { session } = req.params;
+    //     res.status(200).json(getIdsBySession(session)).end();
+    // });
 
     app.get("/record/:id", (req, res) => {
         const { id } = req.params;

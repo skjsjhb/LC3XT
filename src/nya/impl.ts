@@ -2,10 +2,10 @@ import type { DebugBundle } from "../debug/debug";
 import { loli } from "../loli/api";
 import { VM } from "../sugar/vm";
 import { getVersion } from "../util/version";
-import type { TestContext, TestResult } from "./context";
+import type { TestInput, TestResult } from "./context";
 import { getTestDriver } from "./drive";
 
-export function runTest(context: TestContext): TestResult {
+export function runTest(context: TestInput): TestResult {
     const result: TestResult = {
         context,
         id: "",
@@ -15,8 +15,7 @@ export function runTest(context: TestContext): TestResult {
         runnerVersion: getVersion(),
         assembleExceptions: [],
         assembleOK: true,
-        units: [],
-        sac: []
+        units: []
     };
     try {
         let binary: string[][] = [];

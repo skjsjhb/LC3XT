@@ -1,86 +1,54 @@
-import sqlite, { type Database } from "better-sqlite3";
-import consola from "consola";
 import type { TestResult } from "./context";
+import loki from "lokijs";
+import consola from "consola";
 
-let db: Database;
+let db: Loki;
 
-let lastId = 1;
+interface NyaMeta {
+    // The next ID for a new submission.
+    nextRecordId: number;
+}
 
 export function initNyaStore(path: string) {
-    db = sqlite(path);
-    db.exec("CREATE TABLE IF NOT EXISTS lastId(id INT);"); // DB for stats
-    db.exec(
-        `CREATE TABLE IF NOT EXISTS records(
-            id CHARACTER(16) PRIMARY KEY,
-            session CHARACTER(32),
-            meta TEXT,
-            source TEXT
-        );`,
-    ); // DB for test records
-    db.exec(
-        "CREATE TABLE IF NOT EXISTS accepted_records(id CHARACTER(16) PRIMARY KEY);",
-    ); // DB for SAC
+    db = new loki(path, {
+        autoload: true,
+        autosave: true,
+        autoloadCallback: setInitialData,
+        autosaveInterval: 10e3
+    });
+}
 
-    const res = db.prepare("SELECT id FROM lastId;").get() as { id: number };
-    lastId = res?.id ?? 1;
+function setInitialData() {
+    if (!db.getCollection("records")) {
+        db.addCollection<TestResult>("records", { unique: ["id"] });
+    }
+
+    if (!db.getCollection("meta")) {
+        const meta = db.addCollection<NyaMeta>("meta");
+        meta.insert({ nextRecordId: 1 });
+    }
 }
 
 export function getResult(id: string): TestResult | null {
-    const res = db
-        .prepare("SELECT session, meta, source FROM records WHERE id = ?")
-        .get(id) as { session: string; meta: string; source: string };
-    if (!res) return null;
-    const out = JSON.parse(res.meta);
-    out.context.session = res.session;
-    out.context.source = res.source;
-    return out;
+    const records = db.getCollection<TestResult>("records");
+    return records.findOne({ id });
 }
 
-export function enrollResult(id: string, rec: TestResult) {
-    const session = rec.context.session;
-    const source = rec.context.source;
-    rec.context.source = "";
-    rec.context.session = "";
+export function enrollResult(rec: TestResult) {
+    const records = db.getCollection<TestResult>("records");
+    records.insert(rec);
 
-    db.prepare("INSERT INTO records VALUES(?,?,?,?);").run(
-        id,
-        session,
-        JSON.stringify(rec),
-        source,
-    );
-
-    consola.info(`Enrolled record ${id}`);
-    if (rec.units.length > 0 && rec.units.every(it => it.status === "AC")) {
-        db.prepare("INSERT INTO accepted_records VALUES(?);").run(id);
-        consola.info(`Enrolled record ${id} for SAC`);
-    }
-}
-
-export function eachAcceptedRecord(
-    what: (id: string, res: { source: string; session: string }) => void,
-) {
-    const itr = db.prepare("SELECT id FROM accepted_records").all();
-    for (const rec of itr) {
-        const { id } = rec as { id: string };
-        const res = db
-            .prepare("SELECT source, session FROM records WHERE id = ?;")
-            .get(id) as { source: string; session: string };
-        what(id, res);
-    }
-}
-
-export function getIdsBySession(session: string): string[] {
-    const res = db
-        .prepare("SELECT id FROM records WHERE session = ?;")
-        .all(session) as { id: string }[] | null;
-    if (res == null) return [];
-    return res.map(it => it.id);
+    consola.info(`Enrolled result ${rec.id}`);
 }
 
 export function createId(): string {
-    lastId++;
-    db.exec("DELETE FROM lastId;");
-    db.prepare("INSERT INTO lastId VALUES(?);").run(lastId);
+    const metas = db.getCollection("meta");
+    const meta = metas.findOne() as NyaMeta;
 
-    return `K${lastId.toString().padStart(8, "0")}`;
+    const name = "R" + meta.nextRecordId.toString().padStart(5, "0");
+
+    meta.nextRecordId++;
+    metas.update(meta);
+
+    return name;
 }
