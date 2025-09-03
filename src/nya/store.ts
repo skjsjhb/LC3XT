@@ -1,6 +1,7 @@
 import type { TestResult } from "./context";
 import loki from "lokijs";
 import consola from "consola";
+import { User } from "./user";
 
 let db: Loki;
 
@@ -9,7 +10,7 @@ interface NyaMeta {
     nextRecordId: number;
 }
 
-export function initNyaStore(path: string) {
+export function init(path: string) {
     db = new loki(path, {
         autoload: true,
         autosave: true,
@@ -27,21 +28,25 @@ function setInitialData() {
         const meta = db.addCollection<NyaMeta>("meta");
         meta.insert({ nextRecordId: 1 });
     }
+
+    if (!db.getCollection("users")) {
+        db.addCollection<User>("users");
+    }
 }
 
-export function getResult(id: string): TestResult | null {
+function getResult(id: string): TestResult | null {
     const records = db.getCollection<TestResult>("records");
     return records.findOne({ id });
 }
 
-export function enrollResult(rec: TestResult) {
+function enrollResult(rec: TestResult) {
     const records = db.getCollection<TestResult>("records");
     records.insert(rec);
 
     consola.info(`Enrolled result ${rec.id}`);
 }
 
-export function createId(): string {
+function createId(): string {
     const metas = db.getCollection("meta");
     const meta = metas.findOne() as NyaMeta;
 
@@ -52,3 +57,12 @@ export function createId(): string {
 
     return name;
 }
+
+function getUser(uid: string): User | null {
+    const users = db.getCollection<User>("users");
+    return users.findOne({ uid });
+}
+
+export const store = {
+    init, enrollResult, getResult, createId, getUser
+};

@@ -4,15 +4,14 @@ import express, { json } from "express";
 import { i18nInit } from "../i18n/i18n";
 import { getVersion } from "../util/version";
 import type { TestInput } from "./context";
-import { createId, enrollResult, getResult, initNyaStore } from "./store";
-import { type AssemblerTestCase, requestAssemblerTest } from "./assembler-test";
-import { loli } from "../loli/api";
 import { runner } from "./runner";
+import { store } from "./store";
+import { userCtl } from "./user";
 
 async function main() {
     await i18nInit("zh-CN");
 
-    initNyaStore(process.env.NYA_DB_PATH || "nya.v0.db");
+    store.init(process.env.NYA_DB_PATH || "nya.v0.db");
 
     const port = 7901;
 
@@ -23,16 +22,22 @@ async function main() {
     const pendingTests = new Set<string>();
 
     app.post("/submit", async (req, res) => {
+        const userToken = req.header("Authorization") || "";
         const ctx = req.body as TestInput;
 
-        const id = createId();
+        if (!userCtl.validateToken(ctx.uid, userToken)) {
+            res.status(401).end();
+            return;
+        }
+
+        const id = store.createId();
         res.status(200).send(id).end();
 
         pendingTests.add(id);
 
         const r = await runner.evaluate(ctx);
         r.id = id;
-        enrollResult(r);
+        store.enrollResult(r);
 
         pendingTests.delete(id);
     });
@@ -51,59 +56,96 @@ async function main() {
     // });
 
     app.get("/record/:id", (req, res) => {
+        const userToken = req.header("Authorization") || "";
+
         const { id } = req.params;
         if (pendingTests.has(id)) {
             res.status(202).end();
         } else {
-            const r = getResult(id);
+            const r = store.getResult(id);
             if (r) {
-                res.status(200).json(r).end();
+                if (userCtl.validateToken(r.context.uid, userToken)) {
+                    res.status(200).json(r).end();
+                } else {
+                    res.status(401).end();
+                }
             } else {
                 res.status(404).end();
             }
         }
     });
 
-    const testSessions = new Map<string, AssemblerTestCase>();
+    // const testSessions = new Map<string, AssemblerTestCase>();
 
-    app.get("/acquire-assembler-test", (_, res) => {
-        const test = requestAssemblerTest();
-        testSessions.set(test.session, test);
-        setTimeout(() => {
-            testSessions.delete(test.session);
-        }, 60 * 1000);
-        res.status(200).json(test).end();
-    });
+    // app.get("/acquire-assembler-test", (_, res) => {
+    //     const test = requestAssemblerTest();
+    //     testSessions.set(test.session, test);
+    //     setTimeout(() => {
+    //         testSessions.delete(test.session);
+    //     }, 60 * 1000);
+    //     res.status(200).json(test).end();
+    // });
+    //
+    // app.post("/commit-assembler-test", (req, res) => {
+    //     const { session, results } = req.body as { session: string, results: string[] };
+    //     const origin = testSessions.get(session);
+    //     if (!origin) {
+    //         res.status(404).end();
+    //         return;
+    //     }
+    //
+    //     testSessions.delete(session);
+    //
+    //     let i = -1;
+    //     for (const p of origin.test) {
+    //         i++;
+    //         const ctx = loli.build(p);
+    //         if (ctx.hasError()) continue;
+    //         const strippedBin = ctx.outputBinary()[0];
+    //         strippedBin.shift();
+    //         if (strippedBin.join("\n").trim() !== results[i].trim()) {
+    //             res.status(418).json(
+    //                 {
+    //                     source: p,
+    //                     expected: strippedBin.join("\n"),
+    //                     received: results[i]
+    //                 }
+    //             ).end();
+    //             return;
+    //         }
+    //     }
+    //     res.status(204).end();
+    // });
 
-    app.post("/commit-assembler-test", (req, res) => {
-        const { session, results } = req.body as { session: string, results: string[] };
-        const origin = testSessions.get(session);
-        if (!origin) {
-            res.status(404).end();
+    app.post("/auth/login", async (req, res) => {
+        const body = req.body as { uid: string, pwd: string, ip: string }; // IP forwarded by invoker
+
+        const user = store.getUser(body.uid);
+        if (!user) {
+            res.status(401).end();
             return;
         }
 
-        testSessions.delete(session);
-
-        let i = -1;
-        for (const p of origin.test) {
-            i++;
-            const ctx = loli.build(p);
-            if (ctx.hasError()) continue;
-            const strippedBin = ctx.outputBinary()[0];
-            strippedBin.shift();
-            if (strippedBin.join("\n").trim() !== results[i].trim()) {
-                res.status(418).json(
-                    {
-                        source: p,
-                        expected: strippedBin.join("\n"),
-                        received: results[i]
-                    }
-                ).end();
-                return;
-            }
+        if (await userCtl.checkPassword(body.pwd, user.pwd)) {
+            const token = userCtl.makeToken(body.uid);
+            res.status(200).send(token).end();
+        } else {
+            res.status(401).end();
+            return;
         }
-        res.status(204).end();
+    });
+
+    app.post("/auth/refresh", async (req, res) => {
+        const body = req.body as { uid: string };
+        const userToken = req.header("Authorization") || "";
+
+        if (!userCtl.validateToken(body.uid, userToken)) {
+            res.status(401).end();
+            return;
+        }
+
+        const nt = userCtl.makeToken(body.uid);
+        res.status(200).send(nt).end();
     });
 
     app.listen(port);
