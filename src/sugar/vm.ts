@@ -60,11 +60,7 @@ export class VM {
 
     private strict = false;
 
-    private debugInfo: DebugBundle = {
-        execMemory: new Set(),
-        symbols: new Map(),
-        lineMap: new Map()
-    };
+    private debugInfo: DebugBundle | null = null;
 
     private nativeIntHandlers = new Map<number, () => void>();
 
@@ -141,7 +137,7 @@ export class VM {
     private interpretAddress(addr: number): string {
         const value = toHex(addr);
         let label = "";
-        for (const [lb, a] of this.debugInfo.symbols.entries()) {
+        for (const [lb, a] of this.debugInfo?.symbols.entries() ?? []) {
             if (a === addr) {
                 label = lb;
                 break;
@@ -312,7 +308,6 @@ export class VM {
         bin.shift();
         for (const i of bin) {
             this.memory.write(addr, i, false);
-            this.debugInfo.execMemory.add(addr);
             addr++;
         }
     }
@@ -341,7 +336,7 @@ export class VM {
         const instr = this.memory.readAnyway(addr);
         const ex = buildRuntimeException(addr, instr, type, detail);
 
-        const lineNo = this.debugInfo.lineMap.get(addr) ?? -1;
+        const lineNo = this.debugInfo?.lineMap.get(addr) ?? -1;
         if (lineNo >= 0) {
             ex.message += t("debug.source-pos", { line: lineNo });
         }
@@ -383,10 +378,8 @@ export class VM {
         this.instrCount++;
         this.pc++;
 
-        if (
-            this.debugInfo.execMemory.size > 0 &&
-            !this.debugInfo.execMemory.has(this.pc - 1)
-        ) {
+
+        if (this.debugInfo && !this.debugInfo.execMemory.has(this.pc - 1)) {
             this.raise("data-execution", {
                 address: this.interpretAddress(this.pc - 1),
                 content: toHex(instr)
