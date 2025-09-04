@@ -68,6 +68,14 @@ function addUser(uid: string, pwd: string, name: string) {
     users.insert({ uid, pwd, name, token: "" });
 }
 
+function setUserPwd(uid: string, pwd: string) {
+    const users = db.getCollection<User>("users");
+    const u = users.findOne({ uid });
+    if (!u) return;
+    u.pwd = pwd;
+    users.update(u);
+}
+
 function setUserToken(uid: string, token: string) {
     const users = db.getCollection<User>("users");
     const u = users.findOne({ uid });
@@ -77,5 +85,5 @@ function setUserToken(uid: string, token: string) {
 }
 
 export const store = {
-    init, enrollResult, getResult, createId, getUser, addUser, setUserToken
+    init, enrollResult, getResult, createId, getUser, addUser, setUserToken, setUserPwd
 };

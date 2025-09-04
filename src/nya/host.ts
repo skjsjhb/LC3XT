@@ -142,6 +142,18 @@ async function main() {
         }
     });
 
+    app.post("/auth/setpwd", async (req, res) => {
+        const body = req.body as { uid: string, pwd: string };
+        const userToken = req.header("Authorization") || "";
+        const user = store.getUser(body.uid);
+        if (!user || user.token !== userToken || !user.token) {
+            res.status(401).end();
+            return;
+        }
+        store.setUserPwd(body.uid, body.pwd);
+        res.status(204).end();
+    });
+
     // app.post("/auth/refresh", async (req, res) => {
     //     const body = req.body as { uid: string };
     //     const userToken = req.header("Authorization") || "";
