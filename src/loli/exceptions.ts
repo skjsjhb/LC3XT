@@ -52,7 +52,7 @@ const exceptionLevelMap: Record<AssembleException, AssembleExceptionLevel> = {
     "empty-program": "warn",
     "negative-trap": "warn",
     "label-redefined": "warn",
-    "no-halt": "warn",
+    "no-halt": "warn"
 };
 
 export type AssembleExceptionDetails = {
@@ -164,7 +164,7 @@ export interface AssembleExceptionSummary {
 
 function translateException<T extends AssembleException>(
     type: T,
-    detail: AssembleExceptionDetails[T],
+    detail: AssembleExceptionDetails[T]
 ) {
     const key = `exception.asm.${type}`;
     return t(key, { ...detail } as Record<string, string>);
@@ -176,12 +176,12 @@ function translateException<T extends AssembleException>(
 export function buildAssembleException<T extends AssembleException>(
     lineNo: number,
     type: T,
-    detail: AssembleExceptionDetails[T],
+    detail: AssembleExceptionDetails[T]
 ): AssembleExceptionSummary {
     const level = exceptionLevelMap[type];
     return {
         lineNo,
         level,
-        message: translateException(type, detail),
+        message: translateException(type, detail)
     };
 }

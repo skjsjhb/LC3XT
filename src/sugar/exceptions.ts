@@ -15,6 +15,7 @@ export type RuntimeException =
     | "suspicious-system-stack"
     | "suspicious-user-stack"
     | "possible-stack-underflow"
+    | "null-instr"
     | "uninitialized-register";
 
 const exceptionLevelMap: Record<RuntimeException, RuntimeExceptionLevel> = {
@@ -31,7 +32,8 @@ const exceptionLevelMap: Record<RuntimeException, RuntimeExceptionLevel> = {
     "suspicious-system-stack": "warn",
     "suspicious-user-stack": "warn",
     "possible-stack-underflow": "warn",
-    "uninitialized-register": "warn",
+    "null-instr": "warn",
+    "uninitialized-register": "warn"
 };
 
 export type RuntimeExceptionDetails = {
@@ -78,6 +80,7 @@ export type RuntimeExceptionDetails = {
         address: string;
         expected: string;
     };
+    "null-instr": {},
     "uninitialized-register": {
         id: number;
     };
@@ -92,7 +95,7 @@ export interface RuntimeExceptionSummary {
 
 function translateException<T extends RuntimeException>(
     type: T,
-    detail: RuntimeExceptionDetails[T],
+    detail: RuntimeExceptionDetails[T]
 ) {
     const key = `exception.rt.${type}`;
     return t(key, { ...detail } as Record<string, string>);
@@ -105,13 +108,13 @@ export function buildRuntimeException<T extends RuntimeException>(
     addr: number,
     instr: number,
     type: T,
-    detail: RuntimeExceptionDetails[T],
+    detail: RuntimeExceptionDetails[T]
 ): RuntimeExceptionSummary {
     const level = exceptionLevelMap[type];
     return {
         addr,
         instr,
         level,
-        message: translateException(type, detail),
+        message: translateException(type, detail)
     };
 }

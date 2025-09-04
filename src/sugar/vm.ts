@@ -445,10 +445,15 @@ export class VM {
                 // BR
                 if (dr === 0) {
                     // DR contains NZP flags
-                    this.raise("suspicious-empty-branch", {
-                        address: this.interpretAddress(this.pc - 1),
-                        instr: toHex(instr)
-                    });
+                    if (instr === 0) {
+                        // Provide a more specific warning
+                        this.raise("null-instr", {});
+                    } else {
+                        this.raise("suspicious-empty-branch", {
+                            address: this.interpretAddress(this.pc - 1),
+                            instr: toHex(instr)
+                        });
+                    }
                 }
 
                 const pass = this.condition & dr;

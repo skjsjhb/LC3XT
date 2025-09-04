@@ -134,6 +134,8 @@ export default {
                     "用户栈地址 {{address}} 不应位于系统空间或映射 I/O 区域中",
                 "possible-stack-underflow":
                     "栈顶指针位置异常，应当在 {{expected}} 以下，但当前值是 {{address}}",
+                "null-instr":
+                    "发现了意外的全 0 指令",
                 "uninitialized-register": "寄存器 R{{id}} 在使用前未初始化"
             } satisfies Record<RuntimeException, string>
         },
