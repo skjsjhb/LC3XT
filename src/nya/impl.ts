@@ -1,7 +1,6 @@
 import type { DebugBundle } from "../debug/debug";
 import { loli } from "../loli/api";
 import { VM } from "../sugar/vm";
-import { getVersion } from "../util/version";
 import type { TestInput, TestResult } from "./context";
 import { getTestDriver } from "./drive";
 
@@ -12,7 +11,6 @@ export function runTest(context: TestInput): TestResult {
         time: new Date().getTime(),
         error: "",
         runner: "", // Will be assigned later in the host
-        runnerVersion: getVersion(),
         assembleExceptions: [],
         assembleOK: true,
         units: []

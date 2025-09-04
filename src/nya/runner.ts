@@ -1,7 +1,6 @@
 import * as child_process from "node:child_process";
 import path from "node:path";
 import pLimit from "p-limit";
-import { getVersion } from "../util/version";
 import type { TestInput, TestResult } from "./context";
 
 const limit = pLimit(16);
@@ -33,7 +32,6 @@ async function evaluate(context: TestInput): Promise<TestResult> {
             time: new Date().getTime(),
             error: String(e),
             runner: "",
-            runnerVersion: getVersion(),
             assembleExceptions: [],
             assembleOK: false,
             units: []

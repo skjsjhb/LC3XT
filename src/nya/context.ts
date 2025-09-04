@@ -18,7 +18,6 @@ export type TestResult = {
     context: TestInput;
     time: number;
     runner: string;
-    runnerVersion: string;
     assembleExceptions: AssembleExceptionSummary[];
     assembleOK: boolean;
     units: TestUnitResult[];

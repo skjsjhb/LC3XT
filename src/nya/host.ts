@@ -2,11 +2,11 @@ import consola from "consola";
 import cors from "cors";
 import express, { json } from "express";
 import { i18nInit } from "../i18n/i18n";
-import { getVersion } from "../util/version";
 import type { TestInput } from "./context";
 import { runner } from "./runner";
 import { store } from "./store";
 import { userCtl } from "./user";
+import { util } from "./util";
 
 async function main() {
     await i18nInit("zh-CN");
@@ -48,12 +48,9 @@ async function main() {
         pendingTests.delete(id);
     });
 
-    app.get("/version", (req, res) => {
-        res.status(200).send(getVersion()).end();
-    });
-
-    app.get("/commit", (req, res) => {
-        res.status(200).send(process.env.GIT_TAG).end(); // FIXME This won't be loaded
+    app.get("/commit", async (req, res) => {
+        const commit = await util.getGitCommit();
+        res.status(200).send(commit).end();
     });
 
     // app.get("/whose/:session", (req, res) => {
