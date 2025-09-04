@@ -21,11 +21,17 @@ async function main() {
 
     const pendingTests = new Set<string>();
 
+    function validateToken(uid: string, token: string) {
+        const u = store.getUser(uid);
+        if (!u) return false;
+        return !!u.token && u.token === token;
+    }
+
     app.post("/submit", async (req, res) => {
         const userToken = req.header("Authorization") || "";
         const ctx = req.body as TestInput;
 
-        if (!userCtl.validateToken(ctx.uid, userToken)) {
+        if (!validateToken(ctx.uid, userToken)) {
             res.status(401).end();
             return;
         }
@@ -47,7 +53,7 @@ async function main() {
     });
 
     app.get("/commit", (req, res) => {
-        res.status(200).send(process.env.GIT_TAG).end();
+        res.status(200).send(process.env.GIT_TAG).end(); // FIXME This won't be loaded
     });
 
     // app.get("/whose/:session", (req, res) => {
@@ -64,7 +70,7 @@ async function main() {
         } else {
             const r = store.getResult(id);
             if (r) {
-                if (userCtl.validateToken(r.context.uid, userToken)) {
+                if (validateToken(r.context.uid, userToken)) {
                     res.status(200).json(r).end();
                 } else {
                     res.status(401).end();
@@ -118,7 +124,7 @@ async function main() {
     // });
 
     app.post("/auth/login", async (req, res) => {
-        const body = req.body as { uid: string, pwd: string, ip: string }; // IP forwarded by invoker
+        const body = req.body as { uid: string, pwd: string };
 
         const user = store.getUser(body.uid);
         if (!user) {
@@ -127,7 +133,8 @@ async function main() {
         }
 
         if (await userCtl.checkPassword(body.pwd, user.pwd)) {
-            const token = userCtl.makeToken(body.uid);
+            const token = userCtl.makeToken();
+            store.setUserToken(body.uid, token);
             res.status(200).send(token).end();
         } else {
             res.status(401).end();
@@ -135,17 +142,25 @@ async function main() {
         }
     });
 
-    app.post("/auth/refresh", async (req, res) => {
-        const body = req.body as { uid: string };
-        const userToken = req.header("Authorization") || "";
+    // app.post("/auth/refresh", async (req, res) => {
+    //     const body = req.body as { uid: string };
+    //     const userToken = req.header("Authorization") || "";
+    //
+    //     if (!userCtl.validateToken(body.uid, userToken)) {
+    //         res.status(401).end();
+    //         return;
+    //     }
+    //
+    //     const nt = userCtl.makeToken(body.uid);
+    //     res.status(200).send(nt).end();
+    // });
 
-        if (!userCtl.validateToken(body.uid, userToken)) {
-            res.status(401).end();
-            return;
-        }
-
-        const nt = userCtl.makeToken(body.uid);
-        res.status(200).send(nt).end();
+    // The following privileged APIs shall not be exposed
+    app.post("/sudo/useradd", async (req, res) => {
+        const body = req.body as { uid: string, pwd: string, name: string };
+        const pwh = await userCtl.hashPassword(body.pwd);
+        store.addUser(body.uid, pwh, body.name);
+        res.status(204).end();
     });
 
     app.listen(port);

@@ -63,6 +63,19 @@ function getUser(uid: string): User | null {
     return users.findOne({ uid });
 }
 
+function addUser(uid: string, pwd: string, name: string) {
+    const users = db.getCollection<User>("users");
+    users.insert({ uid, pwd, name, token: "" });
+}
+
+function setUserToken(uid: string, token: string) {
+    const users = db.getCollection<User>("users");
+    const u = users.findOne({ uid });
+    if (!u) return;
+    u.token = token;
+    users.update(u);
+}
+
 export const store = {
-    init, enrollResult, getResult, createId, getUser
+    init, enrollResult, getResult, createId, getUser, addUser, setUserToken
 };

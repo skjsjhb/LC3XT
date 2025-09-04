@@ -9,36 +9,12 @@ export interface User {
     pwd: string;
     // Customizable name
     name: string;
+    // The current active token
+    token: string;
 }
 
-interface TokenRecord {
-    content: string;
-    time: number;
-}
-
-const tokens = new Map<string, TokenRecord>(); // Maps UID to token
-const TOKEN_TIMEOUT = 3600e3;
-
-function makeToken(uid: string): string {
-    const t = crypto.randomBytes(128).toString("hex");
-    tokens.set(uid, { content: t, time: Date.now() });
-    return t;
-}
-
-function validateToken(uid: string, token: string): boolean {
-    const rec = tokens.get(uid);
-    if (!rec) return false;
-
-    if (Date.now() - rec.time >= TOKEN_TIMEOUT) {
-        tokens.delete(uid);
-        return false;
-    }
-
-    return rec.content === token;
-}
-
-function removeToken(token: string) {
-    tokens.delete(token);
+function makeToken(): string {
+    return crypto.randomBytes(128).toString("hex");
 }
 
 const scryptPromise =
@@ -62,4 +38,4 @@ async function checkPassword(pwd: string, hash: string): Promise<boolean> {
     }
 }
 
-export const userCtl = { hashPassword, checkPassword, makeToken, validateToken, removeToken };
+export const userCtl = { hashPassword, checkPassword, makeToken };

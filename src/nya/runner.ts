@@ -7,8 +7,7 @@ import type { TestInput, TestResult } from "./context";
 const limit = pLimit(16);
 
 function runOnNewProcess(context: TestInput): Promise<TestResult> {
-    // TODO: Move to use modern dispatching
-    const proc = child_process.fork(path.join(__dirname, "proc-launcher.cjs"));
+    const proc = child_process.fork(path.join(__dirname, "runners/proc.ts"));
     return new Promise((res, rej) => {
         setTimeout(() => {
             proc.kill();
