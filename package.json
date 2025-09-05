@@ -29,6 +29,7 @@
         "express": "^4.21.2",
         "fs-extra": "^11.3.1",
         "i18next": "^23.16.8",
+        "js-levenshtein": "^1.1.6",
         "lokijs": "^1.5.12",
         "nanoid": "^5.1.5",
         "p-limit": "^6.2.0",
