@@ -11,12 +11,18 @@ interface NyaMeta {
 }
 
 export function init(path: string) {
+    const { promise, resolve } = Promise.withResolvers<void>();
     db = new loki(path, {
         autoload: true,
         autosave: true,
-        autoloadCallback: setInitialData,
+        autoloadCallback: () => {
+            setInitialData();
+            resolve();
+        },
         autosaveInterval: 10e3
     });
+    db.getName(); // Trigger load
+    return promise;
 }
 
 function setInitialData() {
@@ -30,7 +36,7 @@ function setInitialData() {
     }
 
     if (!db.getCollection("users")) {
-        db.addCollection<User>("users");
+        db.addCollection<User>("users", { unique: ["uid"] });
     }
 }
 
@@ -84,6 +90,17 @@ function setUserToken(uid: string, token: string) {
     users.update(u);
 }
 
+function saveAll() {
+    const { promise, resolve, reject } = Promise.withResolvers<void>();
+
+    db.saveDatabase((e) => {
+        if (e) reject(e);
+        else resolve();
+    });
+
+    return promise;
+}
+
 export const store = {
-    init, enrollResult, getResult, createId, getUser, addUser, setUserToken, setUserPwd
+    init, enrollResult, getResult, createId, getUser, addUser, setUserToken, setUserPwd, saveAll
 };

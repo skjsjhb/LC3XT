@@ -11,7 +11,7 @@ import { util } from "./util";
 async function main() {
     await i18nInit("zh-CN");
 
-    store.init(process.env.NYA_DB_PATH || "nya.v0.db");
+    await store.init(process.env.NYA_DB_PATH || "nya.v0.db");
 
     const port = 7901;
 
@@ -44,8 +44,9 @@ async function main() {
         const r = await runner.evaluate(ctx);
         r.id = id;
         store.enrollResult(r);
-
         pendingTests.delete(id);
+
+        void store.saveAll();
     });
 
     app.get("/commit", async (req, res) => {
@@ -170,6 +171,7 @@ async function main() {
         const pwh = await userCtl.hashPassword(body.pwd);
         store.addUser(body.uid, pwh, body.name);
         res.status(204).end();
+        void store.saveAll();
     });
 
     app.listen(port);
