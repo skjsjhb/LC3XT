@@ -31,8 +31,15 @@ async function main() {
             consola.warn("Ignoring incomplete line: " + u);
         } else {
             const pwh = await userCtl.hashPassword(u[1]);
-            store.addUser(u[0], pwh, u[0]); // Use UID as name
-            consola.info("Adding user: " + u[0]);
+            const uid = u[0];
+            if (store.getUser(uid)) {
+                store.setUserPwd(uid, pwh);
+                consola.info("Updating user: " + uid);
+            } else {
+                store.addUser(uid, pwh, uid); // Use UID as name
+                consola.info("Adding user: " + uid);
+            }
+
         }
     }
 

@@ -148,7 +148,8 @@ async function main() {
             res.status(401).end();
             return;
         }
-        store.setUserPwd(body.uid, body.pwd);
+        const pwh = await userCtl.hashPassword(body.pwd);
+        store.setUserPwd(body.uid, pwh);
         res.status(204).end();
     });
 
