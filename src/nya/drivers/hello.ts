@@ -20,10 +20,16 @@ const driver: TestExecutor = (vm, env) => {
 
     vm.setPC(0x3000);
     vm.run();
+
     res.runtimeExceptions = vm.getExceptions();
     res.output.received = vm.getOutput();
-    res.status = translateHaltReason(vm.getHaltReason());
-    if (res.status !== "AC") {
+    res.time = Date.now();
+    res.stats = vm.getStat();
+
+    const status = translateHaltReason(vm.getHaltReason());
+
+    if (status !== "OK") {
+        res.status = status;
         return res;
     }
 
@@ -33,9 +39,6 @@ const driver: TestExecutor = (vm, env) => {
     } else {
         res.status = "WA";
     }
-
-    res.time = Date.now();
-    res.stats = vm.getStat();
 
     return res;
 };

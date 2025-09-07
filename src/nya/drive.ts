@@ -24,7 +24,7 @@ export function getTestDriver(id: string): TestDriver {
     return drivers[id];
 }
 
-export function translateHaltReason(reason: HaltReason): TestUnitStatus {
+export function translateHaltReason(reason: HaltReason): TestUnitStatus | "OK" {
     switch (reason) {
         case "error":
             return "RE";
@@ -33,5 +33,5 @@ export function translateHaltReason(reason: HaltReason): TestUnitStatus {
         case "input":
             return "IEE";
     }
-    return "AC";
+    return "OK";
 }
