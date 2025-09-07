@@ -16,7 +16,7 @@ export function buildSymbolTable(context: AssembleContext) {
                 if (!isDefined) {
                     context.raise("implicit-located-label", {
                         label: l,
-                        address: toHex(currentAddr),
+                        address: toHex(currentAddr)
                     });
                 }
 
@@ -63,7 +63,7 @@ export function buildSymbolTable(context: AssembleContext) {
                 }
                 if (labels.length === 0) {
                     context.raise("blkw-without-label", {
-                        address: toHex(currentAddr),
+                        address: toHex(currentAddr)
                     });
                 }
                 break;
@@ -78,7 +78,7 @@ export function buildSymbolTable(context: AssembleContext) {
                 }
                 if (labels.length === 0) {
                     context.raise("string-without-label", {
-                        address: toHex(currentAddr),
+                        address: toHex(currentAddr)
                     });
                 }
                 currentAddr += len;
@@ -89,7 +89,7 @@ export function buildSymbolTable(context: AssembleContext) {
                 currentAddr++;
                 if (labels.length === 0) {
                     context.raise("fill-without-label", {
-                        address: toHex(currentAddr),
+                        address: toHex(currentAddr)
                     });
                 }
                 break;
@@ -109,7 +109,7 @@ export function buildSymbolTable(context: AssembleContext) {
 function parseNumber(
     context: AssembleContext,
     s: string,
-    autoPrefix = false,
+    autoPrefix = false
 ): number | null {
     let ns = s.toUpperCase();
 
@@ -173,7 +173,7 @@ const instrArgsFormat: Record<string, string> = {
     ".ORIG": "I",
     ".BLKW": "N",
     ".STRINGZ": "N",
-    ".FILL": "I",
+    ".FILL": "I"
 };
 
 export type SemanticInstruction = {
@@ -182,14 +182,14 @@ export type SemanticInstruction = {
     op: string;
     registers: number[];
     imm: number;
-    label: string; // The label used as operands
+    label: string | number; // The label used as operands
 };
 
 // Fill in arguments based on the given pattern
 function buildArgs(
     context: AssembleContext,
     si: SemanticInstruction,
-    args: string[],
+    args: string[]
 ) {
     const pattern = instrArgsFormat[si.op] || "";
     for (const c of pattern.split("")) {
@@ -233,7 +233,7 @@ export function parseSemanticInstructions(context: AssembleContext) {
             op: op.startsWith("BR") ? "BR" : op,
             label: "",
             imm: -1,
-            registers: [],
+            registers: []
         };
 
         buildArgs(context, si, args);
@@ -271,7 +271,7 @@ function readRegister(context: AssembleContext, args: string[]): number {
 function readImmediate(
     context: AssembleContext,
     args: string[],
-    autoPrefix: boolean,
+    autoPrefix: boolean
 ): number {
     const a = args.shift()?.toUpperCase();
     if (a !== undefined) {
@@ -281,10 +281,16 @@ function readImmediate(
     return -1;
 }
 
-function readLabel(context: AssembleContext, args: string[]): string {
+function readLabel(context: AssembleContext, args: string[]): string | number {
     const s = args.shift();
     if (s !== undefined) {
         if (context.symbols.has(s)) return s;
+        // All labels in LC-3 can also be immediate, accept them
+        const imm = parseNumber(context, s, true);
+        if (imm != null) {
+            context.raise("brittle-offset", { immediate: s });
+            return imm;
+        }
     }
     context.raise("not-label", { candidate: s || "(null)" });
     return "";

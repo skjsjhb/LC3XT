@@ -108,6 +108,7 @@ export default {
                 "negative-trap":
                     "陷阱向量是无符号数，但是发现了 {{vec}}，将按其补码编码",
                 "label-redefined": "标签 {{label}} 已经定义过了",
+                "brittle-offset": "应当使用标签而非立即数（{{immediate}}）指定偏移量",
                 "no-halt": "程序没有 HALT 指令，将不会正常终止"
             } satisfies Record<AssembleException, string>,
 

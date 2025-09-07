@@ -44,7 +44,7 @@ export class VM {
     private instrCount = 0;
     private limit = 10000;
 
-    private condition = 0;
+    private condition = 0b010;
 
     private sysStack = 0x3000;
     private userStack = 0xfe00;

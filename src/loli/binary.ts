@@ -21,12 +21,12 @@ export function createBinary(context: AssembleContext) {
     function finalizeProgram() {
         context.binary.push({
             origin,
-            bin,
+            bin
         });
 
         if (bin.length === 0) {
             context.raise("empty-program", {
-                address: toHex(origin),
+                address: toHex(origin)
             });
         }
 
@@ -47,10 +47,16 @@ export function createBinary(context: AssembleContext) {
         return origin + bin.length;
     }
 
-    function getPCOffset(label: string, bits: number): number {
-        const loc = context.symbols.get(label) ?? 0;
-        const diff = loc - (getCurrentPC() + 1);
-        return toComplement(diff, bits);
+    function getPCOffset(label: string | number, bits: number): number {
+        if (typeof label === "string") {
+            // Parse the label
+            const loc = context.symbols.get(label) ?? 0;
+            const diff = loc - (getCurrentPC() + 1);
+            return toComplement(diff, bits);
+        } else {
+            // Directly encode the immediate
+            return toComplement(label, bits);
+        }
     }
 
     function markDataMemory() {
@@ -154,8 +160,8 @@ export function createBinary(context: AssembleContext) {
             case "LD": {
                 bin.push(
                     (0b0010 << 12) |
-                        (si.registers[0] << 9) |
-                        getPCOffset(si.label, 9),
+                    (si.registers[0] << 9) |
+                    getPCOffset(si.label, 9)
                 );
                 break;
             }
@@ -163,8 +169,8 @@ export function createBinary(context: AssembleContext) {
             case "LDI": {
                 bin.push(
                     (0b1010 << 12) |
-                        (si.registers[0] << 9) |
-                        getPCOffset(si.label, 9),
+                    (si.registers[0] << 9) |
+                    getPCOffset(si.label, 9)
                 );
                 break;
             }
@@ -173,9 +179,9 @@ export function createBinary(context: AssembleContext) {
                 const [dr, base] = si.registers;
                 bin.push(
                     (0b0110 << 12) |
-                        (dr << 9) |
-                        (base << 6) |
-                        toComplement(si.imm, 6),
+                    (dr << 9) |
+                    (base << 6) |
+                    toComplement(si.imm, 6)
                 );
                 break;
             }
@@ -183,8 +189,8 @@ export function createBinary(context: AssembleContext) {
             case "LEA": {
                 bin.push(
                     (0b1110 << 12) |
-                        (si.registers[0] << 9) |
-                        getPCOffset(si.label, 9),
+                    (si.registers[0] << 9) |
+                    getPCOffset(si.label, 9)
                 );
                 break;
             }
@@ -203,8 +209,8 @@ export function createBinary(context: AssembleContext) {
             case "ST": {
                 bin.push(
                     (0b0011 << 12) |
-                        (si.registers[0] << 9) |
-                        getPCOffset(si.label, 9),
+                    (si.registers[0] << 9) |
+                    getPCOffset(si.label, 9)
                 );
                 break;
             }
@@ -212,8 +218,8 @@ export function createBinary(context: AssembleContext) {
             case "STI": {
                 bin.push(
                     (0b1011 << 12) |
-                        (si.registers[0] << 9) |
-                        getPCOffset(si.label, 9),
+                    (si.registers[0] << 9) |
+                    getPCOffset(si.label, 9)
                 );
                 break;
             }
@@ -222,9 +228,9 @@ export function createBinary(context: AssembleContext) {
                 const [dr, base] = si.registers;
                 bin.push(
                     (0b0111 << 12) |
-                        (dr << 9) |
-                        (base << 6) |
-                        toComplement(si.imm, 6),
+                    (dr << 9) |
+                    (base << 6) |
+                    toComplement(si.imm, 6)
                 );
                 break;
             }
@@ -283,7 +289,7 @@ function encodeComplement(
     context: AssembleContext,
     n: number,
     bits: number,
-    signed = true,
+    signed = true
 ): number {
     const uLimit = signed ? 2 ** (bits - 1) - 1 : 2 ** bits - 1;
     const bLimit = signed ? -(2 ** (bits - 1)) : 0;
