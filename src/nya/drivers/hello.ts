@@ -12,7 +12,8 @@ const driver: TestExecutor = (vm, env) => {
         stats: {
             instrCount: 0,
             memWrite: 0,
-            memRead: 0
+            memRead: 0,
+            instrFrequency: {}
         },
         runtimeExceptions: [],
         time: 0

@@ -20,6 +20,8 @@ export type VMStat = {
     instrCount: number;
     memRead: number;
     memWrite: number;
+    // Execution time of each instruction by line number
+    instrFrequency: Record<number, number>
 };
 
 const EXCEPTION_LIMIT = 100;
@@ -61,6 +63,9 @@ export class VM {
     private strict = false;
 
     private debugInfo: DebugBundle | null = null;
+
+    // Maps instruction address to its execution time
+    private instrFrequency = new Map<number, number>();
 
     private nativeIntHandlers = new Map<number, () => void>();
 
@@ -184,10 +189,24 @@ export class VM {
      */
     getStat(): VMStat {
         const memStats = this.memory.getStats();
+        const instrFrequency: Record<number, number> = {};
+
+        for (const [addr, freq] of this.instrFrequency) {
+            const line = this.debugInfo?.lineMap.get(addr);
+            if (line) {
+                if (typeof instrFrequency[line] === "number") {
+                    instrFrequency[line] += freq; // Address multiple instructions mapping to the same line
+                } else {
+                    instrFrequency[line] = freq;
+                }
+            }
+        }
+
         return {
             instrCount: this.instrCount,
             memRead: memStats.read,
-            memWrite: memStats.write
+            memWrite: memStats.write,
+            instrFrequency
         };
     }
 
@@ -373,6 +392,8 @@ export class VM {
 
     runNext() {
         if (this.halt) return; // The halt flag must be cleared before run
+
+        this.instrFrequency.set(this.pc, (this.instrFrequency.get(this.pc) ?? 0) + 1);
 
         const instr = this.memory.read(this.pc, false) & 0xffff; // Do not count for instructions
         this.instrCount++;
