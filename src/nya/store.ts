@@ -90,6 +90,12 @@ function setUserToken(uid: string, token: string) {
     users.update(u);
 }
 
+function lookupACRecords(driver: string): TestResult[] {
+    const records = db.getCollection<TestResult>("records");
+    // @ts-ignore False positive
+    return records.find({ "context.driver": driver, "context.accepted": true });
+}
+
 function saveAll() {
     const { promise, resolve, reject } = Promise.withResolvers<void>();
 
@@ -102,5 +108,5 @@ function saveAll() {
 }
 
 export const store = {
-    init, enrollResult, getResult, createId, getUser, addUser, setUserToken, setUserPwd, saveAll
+    init, enrollResult, getResult, createId, getUser, addUser, setUserToken, setUserPwd, saveAll, lookupACRecords
 };

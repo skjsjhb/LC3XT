@@ -7,6 +7,7 @@ import { getTestDriver } from "./drive";
 export function runTest(context: TestInput): TestResult {
     const result: TestResult = {
         context,
+        accepted: false,
         id: "",
         time: new Date().getTime(),
         error: "",
@@ -62,6 +63,10 @@ export function runTest(context: TestInput): TestResult {
                     vm.loadProgram(p);
                 }
                 result.units.push(driver.exec(vm, context.env, i));
+            }
+
+            if (result.units.length > 0 && result.units.every(it => it.status === "AC")) {
+                result.accepted = true;
             }
         }
     } catch (e) {

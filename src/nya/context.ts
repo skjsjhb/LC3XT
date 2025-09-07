@@ -14,6 +14,7 @@ export type TestInput = {
 
 export type TestResult = {
     id: string;
+    accepted: boolean;
     error: string; // Internal error
     context: TestInput;
     time: number;

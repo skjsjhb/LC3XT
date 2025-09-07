@@ -79,6 +79,14 @@ async function main() {
         }
     });
 
+    app.get("/query/:driver", (req, res) => {
+        const driver = req.params.driver;
+        const records = store.lookupACRecords(driver);
+        const passedUsers = records.map(it => it.context.uid);
+
+        res.status(200).json([...new Set(passedUsers)]);
+    });
+
     // const testSessions = new Map<string, AssemblerTestCase>();
 
     // app.get("/acquire-assembler-test", (_, res) => {

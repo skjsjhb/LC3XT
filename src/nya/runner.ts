@@ -28,6 +28,7 @@ async function evaluate(context: TestInput): Promise<TestResult> {
     } catch (e) {
         return {
             context,
+            accepted: false,
             id: "",
             time: new Date().getTime(),
             error: String(e),
