@@ -9,7 +9,6 @@ export type TestInput = {
     lang: Language;
     source: string;
     driver: string;
-    env: Record<string, string>;
 };
 
 export type TestResult = {

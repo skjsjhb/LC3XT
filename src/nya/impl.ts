@@ -62,7 +62,7 @@ export function runTest(context: TestInput): TestResult {
 
                     vm.loadProgram(p);
                 }
-                result.units.push(driver.exec(vm, context.env, i));
+                result.units.push(driver.exec(vm, i));
             }
 
             if (result.units.length > 0 && result.units.every(it => it.status === "AC")) {

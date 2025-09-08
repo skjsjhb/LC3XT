@@ -4,7 +4,6 @@ import hello from "./drivers/hello";
 
 export type TestExecutor = (
     vm: VM,
-    env: Record<string, string>,
     index: number
 ) => TestUnitResult;
 
@@ -22,6 +21,34 @@ const drivers: Record<string, TestDriver> = {
 
 export function getTestDriver(id: string): TestDriver {
     return drivers[id];
+}
+
+export function defaultResult(): TestUnitResult {
+    return {
+        status: "RE",
+        output: {
+            expected: "",
+            received: ""
+        },
+        input: "",
+        stats: {
+            instrCount: 0,
+            memWrite: 0,
+            memRead: 0,
+            instrFrequency: {}
+        },
+        runtimeExceptions: [],
+        time: 0
+    };
+}
+
+export function runAndCollectStats(vm: VM, res: TestUnitResult): TestUnitStatus | "OK" {
+    vm.run();
+    res.runtimeExceptions = vm.getExceptions();
+    res.output.received = vm.getOutput();
+    res.time = Date.now();
+    res.stats = vm.getStat();
+    return translateHaltReason(vm.getHaltReason());
 }
 
 export function translateHaltReason(reason: HaltReason): TestUnitStatus | "OK" {
