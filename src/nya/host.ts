@@ -13,6 +13,13 @@ async function main() {
 
     await store.init(process.env.NYA_DB_PATH || "nya.v0.db");
 
+    if (!process.env.NYA_PRIVATE_KEY) {
+        consola.error("Please point env NYA_PRIVATE_KEY to the file containing the private key.");
+        process.exit(1);
+    }
+
+    await userCtl.loadPrivateKey(process.env.NYA_PRIVATE_KEY);
+
     const port = 7901;
 
     const app = express();
@@ -21,17 +28,11 @@ async function main() {
 
     const pendingTests = new Set<string>();
 
-    function validateToken(uid: string, token: string) {
-        const u = store.getUser(uid);
-        if (!u) return false;
-        return !!u.token && u.token === token;
-    }
-
     app.post("/submit", async (req, res) => {
         const userToken = req.header("Authorization") || "";
         const ctx = req.body as TestInput;
 
-        if (!validateToken(ctx.uid, userToken)) {
+        if (!userCtl.validateToken(ctx.uid, userToken)) {
             res.status(401).end();
             return;
         }
@@ -68,7 +69,7 @@ async function main() {
         } else {
             const r = store.getResult(id);
             if (r) {
-                if (validateToken(r.context.uid, userToken)) {
+                if (userCtl.validateToken(r.context.uid, userToken)) {
                     res.status(200).json(r).end();
                 } else {
                     res.status(401).end();
@@ -139,8 +140,7 @@ async function main() {
         }
 
         if (await userCtl.checkPassword(body.pwd, user.pwd)) {
-            const token = userCtl.makeToken();
-            store.setUserToken(body.uid, token);
+            const token = userCtl.issueToken(user.uid);
             res.status(200).send(token).end();
         } else {
             res.status(401).end();
@@ -151,14 +151,26 @@ async function main() {
     app.post("/auth/setpwd", async (req, res) => {
         const body = req.body as { uid: string, pwd: string };
         const userToken = req.header("Authorization") || "";
-        const user = store.getUser(body.uid);
-        if (!user || user.token !== userToken || !user.token) {
+        if (!userCtl.validateToken(body.uid, userToken)) {
             res.status(401).end();
             return;
         }
         const pwh = await userCtl.hashPassword(body.pwd);
         store.setUserPwd(body.uid, pwh);
-        res.status(204).end();
+        const newToken = userCtl.issueToken(body.uid);
+        res.status(200).send(newToken).end();
+    });
+
+    app.post("/auth/refresh", async (req, res) => {
+        const body = req.body as { uid: string };
+        const userToken = req.header("Authorization") || "";
+        if (!userCtl.validateToken(body.uid, userToken)) {
+            res.status(401).end();
+            return;
+        }
+
+        const newToken = userCtl.issueToken(body.uid);
+        res.status(200).send(newToken).end();
     });
 
     // app.post("/auth/refresh", async (req, res) => {

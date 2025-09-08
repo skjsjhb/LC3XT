@@ -1,6 +1,9 @@
 import * as crypto from "node:crypto";
 import { promisify } from "node:util";
 import consola from "consola";
+import * as fs from "node:fs/promises";
+import jwt from "jsonwebtoken";
+import { store } from "./store";
 
 export interface User {
     // Unique user ID
@@ -9,12 +12,30 @@ export interface User {
     pwd: string;
     // Customizable name
     name: string;
-    // The current active token
-    token: string;
+    // Token version
+    version: number;
 }
 
-function makeToken(): string {
-    return crypto.randomBytes(128).toString("hex");
+let PRIVATE_KEY: string;
+
+async function loadPrivateKey(fp: string) {
+    PRIVATE_KEY = (await fs.readFile(fp)).toString();
+}
+
+function issueToken(uid: string): string {
+    const user = store.getUser(uid);
+    if (!user) throw "No such user: " + uid;
+    return jwt.sign({ uid, version: user.version }, PRIVATE_KEY, { expiresIn: 7 * 24 * 60 * 60 * 1000 });
+}
+
+function validateToken(uid: string, token: string): boolean {
+    try {
+        const payload = jwt.verify(token, PRIVATE_KEY) as any;
+        const user = store.getUser(uid);
+        return payload.uid === uid && payload.version === user?.version;
+    } catch {
+        return false;
+    }
 }
 
 const scryptPromise =
@@ -38,4 +59,4 @@ async function checkPassword(pwd: string, hash: string): Promise<boolean> {
     }
 }
 
-export const userCtl = { hashPassword, checkPassword, makeToken };
+export const userCtl = { hashPassword, checkPassword, loadPrivateKey, issueToken, validateToken };
