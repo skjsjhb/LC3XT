@@ -28,6 +28,10 @@ export function buildSymbolTable(context: AssembleContext) {
                 }
 
                 context.symbols.set(l, currentAddr);
+                if (!context.unusedLabels.has(l)) {
+                    context.unusedLabels.set(l, true);
+                }
+                context.labelLineNo.set(l, lineNo);
             }
         }
 
@@ -256,6 +260,19 @@ export function parseSemanticInstructions(context: AssembleContext) {
 
         context.intermediate.semanticInstructions.push(si);
     }
+
+    let savedLineNo = context.lineNo;
+    context.unusedLabels.forEach((unused, label) => {
+        if (unused) {
+            const ln = context.labelLineNo.get(label);
+            if (ln) {
+                // TODO This is an anti-pattern
+                context.lineNo = ln;
+                context.raise("unused-label", { name: label });
+            }
+        }
+    });
+    context.lineNo = savedLineNo;
 }
 
 function readRegister(context: AssembleContext, args: string[]): number {
@@ -284,7 +301,10 @@ function readImmediate(
 function readLabel(context: AssembleContext, args: string[]): string | number {
     const s = args.shift();
     if (s !== undefined) {
-        if (context.symbols.has(s)) return s;
+        if (context.symbols.has(s)) {
+            context.unusedLabels.set(s, false);
+            return s;
+        }
         // All labels in LC-3 can also be immediate, accept them
         const imm = parseNumber(context, s, true);
         if (imm != null) {

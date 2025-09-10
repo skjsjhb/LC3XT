@@ -27,6 +27,7 @@ export type AssembleException =
     | "negative-trap"
     | "label-redefined"
     | "brittle-offset"
+    | "unused-label"
     | "no-halt";
 
 const exceptionLevelMap: Record<AssembleException, AssembleExceptionLevel> = {
@@ -54,6 +55,7 @@ const exceptionLevelMap: Record<AssembleException, AssembleExceptionLevel> = {
     "negative-trap": "warn",
     "label-redefined": "warn",
     "brittle-offset": "warn",
+    "unused-label": "warn",
     "no-halt": "warn"
 };
 
@@ -157,7 +159,11 @@ export type AssembleExceptionDetails = {
 
     "brittle-offset": {
         immediate: string;
-    }
+    };
+
+    "unused-label": {
+        name: string;
+    };
 
     "no-halt": Record<never, never>;
 };

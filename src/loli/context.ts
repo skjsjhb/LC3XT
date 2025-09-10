@@ -3,7 +3,7 @@ import {
     type AssembleException,
     type AssembleExceptionDetails,
     type AssembleExceptionSummary,
-    buildAssembleException,
+    buildAssembleException
 } from "./exceptions";
 import type { SemanticInstruction } from "./parse";
 import type { Token } from "./tokenize";
@@ -38,7 +38,7 @@ export class AssembleContext {
     } = {
         preprocessed: "",
         tokens: [],
-        semanticInstructions: [],
+        semanticInstructions: []
     };
 
     /**
@@ -55,7 +55,7 @@ export class AssembleContext {
     debug: DebugBundle = {
         execMemory: new Set(),
         symbols: new Map(),
-        lineMap: new Map(),
+        lineMap: new Map()
     };
 
     /**
@@ -67,6 +67,16 @@ export class AssembleContext {
      * A map between symbols and their absolute address.
      */
     symbols: Map<string, number> = new Map();
+
+    /**
+     * A map from labels to its usage status (`true` for unused).
+     */
+    unusedLabels: Map<string, boolean> = new Map();
+
+    /**
+     * A map from labels to their line numbers.
+     */
+    labelLineNo: Map<string, number> = new Map();
 
     /**
      * An indexed array mapping an ID to the string literals.
@@ -88,7 +98,7 @@ export class AssembleContext {
      */
     raise<T extends AssembleException>(
         type: T,
-        detail: AssembleExceptionDetails[T],
+        detail: AssembleExceptionDetails[T]
     ): void {
         const ex = buildAssembleException(this.lineNo, type, detail);
         this.exceptions.push(ex);
@@ -99,7 +109,7 @@ export class AssembleContext {
      */
     outputBinary(): string[][] {
         return this.binary.map(program =>
-            [program.origin, ...program.bin].map(toMachineCodeLine),
+            [program.origin, ...program.bin].map(toMachineCodeLine)
         );
     }
 
@@ -110,7 +120,7 @@ export class AssembleContext {
         return {
             execMemory: this.debug.execMemory,
             symbols: this.symbols,
-            lineMap: this.debug.lineMap,
+            lineMap: this.debug.lineMap
         };
     }
 
