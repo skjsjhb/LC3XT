@@ -150,7 +150,7 @@ function parseNumber(
     }
     const num = Number.parseInt(ns, base);
     if (base === -1 || Number.isNaN(num)) {
-        if (ignoreError) {
+        if (!ignoreError) {
             context.raise("not-immediate", { candidate: ns });
         }
         return null;
