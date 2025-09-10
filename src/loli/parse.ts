@@ -113,7 +113,8 @@ export function buildSymbolTable(context: AssembleContext) {
 function parseNumber(
     context: AssembleContext,
     s: string,
-    autoPrefix = false
+    autoPrefix = false,
+    ignoreError = false // Don't raise errors on parse failure
 ): number | null {
     let ns = s.toUpperCase();
 
@@ -149,7 +150,9 @@ function parseNumber(
     }
     const num = Number.parseInt(ns, base);
     if (base === -1 || Number.isNaN(num)) {
-        context.raise("not-immediate", { candidate: ns });
+        if (ignoreError) {
+            context.raise("not-immediate", { candidate: ns });
+        }
         return null;
     }
     if (isImplicit) {
@@ -306,7 +309,7 @@ function readLabel(context: AssembleContext, args: string[]): string | number {
             return s;
         }
         // All labels in LC-3 can also be immediate, accept them
-        const imm = parseNumber(context, s, true);
+        const imm = parseNumber(context, s, true, true);
         if (imm != null) {
             context.raise("brittle-offset", { immediate: s });
             return imm;
