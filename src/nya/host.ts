@@ -69,7 +69,7 @@ async function main() {
         } else {
             const r = store.getResult(id);
             if (r) {
-                if (userCtl.validateToken(r.context.uid, userToken)) {
+                if (userCtl.validateToken(r.context.uid, userToken) || userCtl.validateToken("root", userToken)) {
                     res.status(200).json(r).end();
                 } else {
                     res.status(401).end();
