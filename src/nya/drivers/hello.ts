@@ -4,6 +4,7 @@ const driver: TestExecutor = (vm, _index) => {
     const res = defaultResult();
     res.output.expected = "hello, world";
 
+    vm.setLimit(100);
     vm.setPC(0x3000);
 
     const status = runAndCollectStats(vm, res);

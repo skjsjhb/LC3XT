@@ -25,6 +25,13 @@ export function runTest(context: TestInput): TestResult {
         };
 
         const driver = getTestDriver(context.driver);
+
+        // TODO Can be made more robust
+        if (driver.lang && context.lang !== driver.lang) {
+            result.error = "Binary format required.";
+            return result;
+        }
+
         switch (context.lang) {
             case "asm": {
                 const ctx = loli.build(context.source);
