@@ -32,12 +32,18 @@ async function main() {
         const userToken = req.header("Authorization") || "";
         const ctx = req.body as TestInput;
 
-        if (!userCtl.validateToken(ctx.uid, userToken)) {
+        const isGuest = userToken === "guest";
+
+        if (!isGuest && !userCtl.validateToken(ctx.uid, userToken)) {
             res.status(401).end();
             return;
         }
 
-        const id = store.createId();
+        if (isGuest) {
+            ctx.uid = "";
+        }
+
+        const id = store.createId(isGuest);
         res.status(200).send(id).end();
 
         pendingTests.add(id);
@@ -69,8 +75,16 @@ async function main() {
         } else {
             const r = store.getResult(id);
             if (r) {
-                if (userCtl.validateToken(r.context.uid, userToken) || userCtl.validateToken("root", userToken)) {
+                if (
+                    userCtl.validateToken(r.context.uid, userToken) ||
+                    userCtl.validateToken("root", userToken) ||
+                    r.context.uid === ""
+                ) {
                     res.status(200).json(r).end();
+                    if (r.context.uid === "") {
+                        // Erase the record so that it can only be read once
+                        store.eraseResult(r.id);
+                    }
                 } else {
                     res.status(401).end();
                 }

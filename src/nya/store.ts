@@ -8,6 +8,7 @@ let db: Loki;
 interface NyaMeta {
     // The next ID for a new submission.
     nextRecordId: number;
+    nextTempId: number;
 }
 
 export function init(path: string) {
@@ -32,8 +33,9 @@ function setInitialData() {
 
     if (!db.getCollection("meta")) {
         const meta = db.addCollection<NyaMeta>("meta");
-        meta.insert({ nextRecordId: 1 });
+        meta.insert({ nextRecordId: 1, nextTempId: 1 });
     }
+
 
     if (!db.getCollection("users")) {
         db.addCollection<User>("users", { unique: ["uid"] });
@@ -45,6 +47,11 @@ function getResult(id: string): TestResult | null {
     return records.findOne({ id });
 }
 
+function eraseResult(id: string) {
+    const records = db.getCollection<TestResult>("records");
+    records.removeWhere({ id });
+}
+
 function enrollResult(rec: TestResult) {
     const records = db.getCollection<TestResult>("records");
     records.insert(rec);
@@ -52,13 +59,24 @@ function enrollResult(rec: TestResult) {
     consola.info(`Enrolled result ${rec.id}`);
 }
 
-function createId(): string {
+function createId(guest: boolean): string {
     const metas = db.getCollection("meta");
     const meta = metas.findOne() as NyaMeta;
 
-    const name = "R" + meta.nextRecordId.toString().padStart(5, "0");
+    if (!meta.nextTempId) {
+        meta.nextTempId = 1;
+    }
 
-    meta.nextRecordId++;
+    let name: string;
+
+    if (guest) {
+        name = "T" + meta.nextTempId.toString().padStart(5, "0");
+        meta.nextTempId++;
+    } else {
+        name = "R" + meta.nextRecordId.toString().padStart(5, "0");
+        meta.nextRecordId++;
+    }
+
     metas.update(meta);
 
     return name;
@@ -104,6 +122,7 @@ export const store = {
     init,
     enrollResult,
     getResult,
+    eraseResult,
     createId,
     getUser,
     addUser,
