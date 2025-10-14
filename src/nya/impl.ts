@@ -62,12 +62,19 @@ export function runTest(context: TestInput): TestResult {
         if (result.assembleOK) {
             for (let i = 0; i < driver.repeat; i++) {
                 const vm = new VM(debugBundle);
+                let totalSize = 0;
                 for (const b of binary) {
                     const p = b
                         .map(it => Number.parseInt(it, 2))
                         .filter(it => !Number.isNaN(it));
 
                     vm.loadProgram(p);
+                    totalSize += p.length;
+
+                    if (driver.instrLimit && totalSize > driver.instrLimit) {
+                        result.error = `Program too long (limit ${driver.instrLimit})!`;
+                        return result;
+                    }
                 }
                 result.units.push(driver.exec(vm, i));
             }
