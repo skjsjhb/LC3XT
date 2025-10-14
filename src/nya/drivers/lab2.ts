@@ -14,10 +14,15 @@ function hq(i: number): number {
     return v;
 }
 
-const driver: TestExecutor = (vm, _index) => {
+const driver: TestExecutor = (vm, index) => {
     const res = defaultResult();
 
-    const n = Math.round(Math.random() * 99) + 1;
+    let n: number;
+
+    if (index === 0) n = 1;
+    else if (index === 1) n = 100;
+    else n = Math.round(Math.random() * 99) + 1;
+
     const ev = hq(n);
 
     res.input = toHex(n) + " (" + n + ")";
