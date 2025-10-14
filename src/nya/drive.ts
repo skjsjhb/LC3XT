@@ -2,6 +2,7 @@ import type { HaltReason, VM } from "../sugar/vm";
 import type { TestUnitResult, TestUnitStatus } from "./context";
 import hello from "./drivers/hello";
 import lab1 from "./drivers/lab1";
+import lab2 from "./drivers/lab2";
 
 export type TestExecutor = (
     vm: VM,
@@ -23,6 +24,10 @@ const drivers: Record<string, TestDriver> = {
         repeat: 10,
         exec: lab1,
         lang: "bin"
+    },
+    lab2: {
+        repeat: 10,
+        exec: lab2
     }
 };
 
