@@ -18,11 +18,7 @@ export function runTest(context: TestInput): TestResult {
     };
     try {
         let binary: string[][] = [];
-        let debugBundle: DebugBundle = {
-            execMemory: new Set(),
-            symbols: new Map(),
-            lineMap: new Map()
-        };
+        let debugBundle: DebugBundle | undefined = undefined;
 
         const driver = getTestDriver(context.driver);
 
