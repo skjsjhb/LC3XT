@@ -104,7 +104,7 @@ function setUserPwd(uid: string, pwd: string) {
 function lookupACRecords(driver: string): TestResult[] {
     const records = db.getCollection<TestResult>("records");
     // @ts-ignore False positive
-    return records.find({ "context.driver": driver, "context.accepted": true });
+    return records.find({ "context.driver": driver, accepted: true });
 }
 
 function saveAll() {
