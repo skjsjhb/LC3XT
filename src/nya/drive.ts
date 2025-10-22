@@ -12,7 +12,6 @@ export type TestExecutor = (
 export type TestDriver = {
     repeat: number;
     exec: TestExecutor;
-    instrLimit?: number;
     lang?: string;
 };
 
@@ -28,7 +27,6 @@ const drivers: Record<string, TestDriver> = {
     },
     lab2: {
         repeat: 10,
-        instrLimit: 99,
         exec: lab2
     }
 };

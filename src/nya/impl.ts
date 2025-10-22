@@ -66,11 +66,6 @@ export function runTest(context: TestInput): TestResult {
 
                     vm.loadProgram(p);
                     totalSize += p.length;
-
-                    if (driver.instrLimit && totalSize > driver.instrLimit) {
-                        result.error = `Program too long (limit ${driver.instrLimit})!`;
-                        return result;
-                    }
                 }
                 result.units.push(driver.exec(vm, i));
             }

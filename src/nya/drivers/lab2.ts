@@ -44,10 +44,17 @@ const driver: TestExecutor = (vm, index) => {
     const actualOut = vm.getMemory().readAnyway(0x3101);
     res.output.received = toHex(actualOut);
 
-    if (actualOut === ev) {
-        res.status = "AC";
+    // SPJ: For each input, the memory writes shall be at least the same as N - 2
+    if (vm.getStat().memWrite < n - 2) {
+        // No pre-computed mappings
+        res.status = "RE";
+        res.output.received = "Disqualified (mappings detected)";
     } else {
-        res.status = "WA";
+        if (actualOut === ev) {
+            res.status = "AC";
+        } else {
+            res.status = "WA";
+        }
     }
 
     return res;
