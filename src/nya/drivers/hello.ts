@@ -14,6 +14,8 @@ const driver: TestExecutor = (vm, _index) => {
         return res;
     }
 
+    res.output.received = vm.getOutput();
+
     if (res.output.received === "hello, world" || res.output.received === "ciallo, world") {
         res.status = "AC";
         res.output.expected = res.output.received; // Change the output to match the display
