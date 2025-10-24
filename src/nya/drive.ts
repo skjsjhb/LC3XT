@@ -3,6 +3,7 @@ import type { TestUnitResult, TestUnitStatus } from "./context";
 import hello from "./drivers/hello";
 import lab1 from "./drivers/lab1";
 import lab2 from "./drivers/lab2";
+import lab3 from "./drivers/lab3";
 
 export type TestExecutor = (
     vm: VM,
@@ -28,6 +29,10 @@ const drivers: Record<string, TestDriver> = {
     lab2: {
         repeat: 10,
         exec: lab2
+    },
+    lab3: {
+        repeat: 10,
+        exec: lab3
     }
 };
 
@@ -57,7 +62,6 @@ export function defaultResult(): TestUnitResult {
 export function runAndCollectStats(vm: VM, res: TestUnitResult): TestUnitStatus | "OK" {
     vm.run();
     res.runtimeExceptions = vm.getExceptions();
-    res.output.received = vm.getOutput();
     res.time = Date.now();
     res.stats = vm.getStat();
     return translateHaltReason(vm.getHaltReason());
