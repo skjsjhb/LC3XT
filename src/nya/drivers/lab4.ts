@@ -23,8 +23,15 @@ function route(x: number, y: number): number {
 const driver: TestExecutor = (vm, index) => {
     const res = defaultResult();
 
-    const x = Math.round(Math.random() * 5);
-    const y = Math.round(Math.random() * 5);
+    let x: number, y: number;
+
+    if (index === 0) {
+        x = 5;
+        y = 5;
+    } else {
+        x = Math.round(Math.random() * 5);
+        y = Math.round(Math.random() * 5);
+    }
 
     res.input = `${x} ${y}`;
     const p = priority(x, y);
@@ -33,7 +40,7 @@ const driver: TestExecutor = (vm, index) => {
 
     vm.getMemory().write(0x3100, x);
     vm.getMemory().write(0x3101, y);
-    vm.setLimit(10000);
+    vm.setLimit(50000);
     vm.setPC(0x3000);
 
     const status = runAndCollectStats(vm, res);
