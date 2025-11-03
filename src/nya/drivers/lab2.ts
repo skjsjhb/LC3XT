@@ -32,6 +32,7 @@ const driver: TestExecutor = (vm, index) => {
 
     vm.getMemory().write(0x3100, n);
     vm.setLimit(10000);
+    vm.setMode(1);
     vm.setPC(0x3000);
 
     const status = runAndCollectStats(vm, res);

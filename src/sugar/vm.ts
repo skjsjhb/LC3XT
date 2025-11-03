@@ -185,6 +185,20 @@ export class VM {
     }
 
     /**
+     * Sets the privilege mode.
+     */
+    setMode(mode: 0 | 1) {
+        this.mode = mode;
+    }
+
+    /**
+     * Marks the specified address as executable.
+     */
+    markExecutable(addr: number) {
+        this.debugInfo?.execMemory.add(addr);
+    }
+
+    /**
      * Gets the VM statistics.
      */
     getStat(): VMStat {
@@ -250,7 +264,7 @@ export class VM {
     }
 
     private exportPSR(): number {
-        return (this.mode << 15) & this.condition;
+        return (this.mode << 15) | this.condition;
     }
 
     private haltOnError() {
@@ -280,6 +294,13 @@ export class VM {
      */
     setPC(addr: number) {
         this.pc = addr;
+    }
+
+    /**
+     * Returns the PC.
+     */
+    getPC(): number {
+        return this.pc;
     }
 
     /**

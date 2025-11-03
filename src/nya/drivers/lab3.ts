@@ -37,6 +37,7 @@ const driver: TestExecutor = (vm, index) => {
         vm.sendInput(c.charCodeAt(0));
     }
 
+    vm.setMode(1);
     vm.setPC(0x3000);
 
     const status = runAndCollectStats(vm, res);

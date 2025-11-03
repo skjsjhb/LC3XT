@@ -18,6 +18,7 @@ const driver: TestExecutor = (vm, _index) => {
     vm.setReg(1, v1);
     vm.setReg(2, v2);
     vm.setLimit(100);
+    vm.setMode(1);
     vm.setPC(0x3000);
 
     const status = runAndCollectStats(vm, res);
