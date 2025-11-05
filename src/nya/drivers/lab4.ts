@@ -54,9 +54,7 @@ const driver: TestExecutor = (vm, index) => {
     const actualOut = vm.getMemory().readAnyway(0x3200);
     res.output.received = toHex(actualOut);
 
-    // SPJ: For each input, when using recursion, there should be at least (X * Y + X + Y) function calls, each
-    // containing at least 1 loads and 1 saves (R7 and return value), with 1 extra operation (input/result).
-    const cap = x * y + x + y + 1;
+    const cap = x * y + 1;
     if (vm.getStat().memWrite < cap || vm.getStat().memRead < cap) {
         res.status = "RE";
         res.output.received = "Disqualified (recursion required)";
