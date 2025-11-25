@@ -147,7 +147,9 @@ async function evaluateProgramInner(context: TestInput): Promise<TestResult> {
             units: []
         };
     } finally {
-        await fs.unlink(zipPt);
+        try {
+            await fs.unlink(zipPt);
+        } catch {}
     }
 }
 

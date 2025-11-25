@@ -36,7 +36,9 @@ export async function runProgramTest(zipFp: string, input: string): Promise<{ ou
             return { output: "(Program Failed)", logs: fullLogs };
         }
     } finally {
-        await fs.rm(volumePath, { recursive: true, force: true });
+        try {
+            await fs.rm(volumePath, { recursive: true, force: true });
+        } catch {}
     }
 }
 
