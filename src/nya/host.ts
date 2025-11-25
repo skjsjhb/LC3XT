@@ -24,7 +24,7 @@ async function main() {
 
     const app = express();
     app.use(cors());
-    app.use(json());
+    app.use(json({ limit: "10mb" }));
 
     const pendingTests = new Set<string>();
 
