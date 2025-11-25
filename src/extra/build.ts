@@ -124,7 +124,9 @@ function createCommand(bs: BuildSystem): string {
                 "clang -O2 *.c && exec ./a.out < _input.arc > _output.arc";
         case "PlainCpp":
             return "cd /lc3 && " +
-                "clang++ -O2 *.{cpp,cxx,cc,c} && exec ./a.out < _input.arc > _output.arc";
+                "clang++ -O2 $(find . -type f -maxdepth 1 \\( -iname \"*.cc\" -o -iname \"*.c\" -o -iname \"*.cxx\"" +
+                " -o -iname \"*.cpp\" \\)) && exec" +
+                " ./a.out < _input.arc > _output.arc";
         case "Node":
             return "cd /lc3 && " +
                 "[ -f main.ts ] && exec bun main.ts < _input.arc > _output.arc || " +
