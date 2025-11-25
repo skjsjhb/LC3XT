@@ -34,6 +34,10 @@ const instrArgsFormat: Record<string, string> = {
     ".FILL": "I"
 };
 
+export function requestSingleAssemblerTest(): string {
+    return createProgram();
+}
+
 export function requestAssemblerTest(): AssemblerTestCase {
     const session = nanoid();
     const programs = [];

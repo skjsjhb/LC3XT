@@ -56,6 +56,29 @@ async function main() {
         void store.saveAll();
     });
 
+    app.post("/assembler-submit", async (req, res) => {
+        const userToken = req.header("Authorization") || "";
+        const ctx = req.body as TestInput;
+
+        // Does not permit guest judging for assembler and emulator
+        if (!userCtl.validateToken(ctx.uid, userToken)) {
+            res.status(401).end();
+            return;
+        }
+
+        const id = store.createId(false);
+        res.status(200).send(id).end();
+
+        pendingTests.add(id);
+
+        const r = await runner.evaluateProgram(ctx);
+        r.id = id;
+        store.enrollResult(r);
+        pendingTests.delete(id);
+
+        void store.saveAll();
+    });
+
     app.get("/commit", async (req, res) => {
         const commit = await util.getGitCommit();
         res.status(200).send(commit).end();
