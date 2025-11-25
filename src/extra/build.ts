@@ -163,7 +163,7 @@ async function prepareFiles(zipFp: string): Promise<string> {
 // Boot the image and return logs
 async function runImage(image: string, sourceDir: string, cmd: string): Promise<string> {
     sourceDir = sourceDir.replaceAll("\\", "/").replaceAll("C:", "//c");
-    let logs: string[] = [];
+    let logs = "";
     const proc = child_process.spawn(
         "docker",
         ["run", "--rm", "-v", `${sourceDir}:/lc3`, image, "/bin/sh", "-c", "-x", cmd],
@@ -173,9 +173,9 @@ async function runImage(image: string, sourceDir: string, cmd: string): Promise<
     );
 
     function addLog(d: string) {
-        logs.push(d.trimEnd());
-        if (logs.length > 10000) {
-            logs = logs.slice(100);
+        logs += d;
+        if (logs.length > 100000) {
+            logs = logs.slice(1000);
         }
     }
 
@@ -187,17 +187,16 @@ async function runImage(image: string, sourceDir: string, cmd: string): Promise<
         addLog(d.toString());
     });
 
-
     const { promise, resolve } = Promise.withResolvers<string>();
 
     const timeout = setTimeout(() => {
         if (!proc.killed) proc.kill(9);
-        resolve(logs.join("\n"));
+        resolve(logs);
     }, 5 * 60 * 1000);
 
     proc.once("exit", () => {
         clearTimeout(timeout);
-        resolve(logs.join("\n"));
+        resolve(logs);
     });
 
     return await promise;
