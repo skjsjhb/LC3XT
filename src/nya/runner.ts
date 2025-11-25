@@ -68,9 +68,11 @@ async function evaluateProgramInner(context: TestInput): Promise<TestResult> {
         const { output, logs } = await runProgramTest(zipPt, input);
         const bin = loli.build(input).outputBinary()[0];
         const formattedExpectedOutput = bin.join("\n");
-        const expectedOutput = bin.join("");
+        const expectedOutput = bin.join("").split("")
+            .filter(it => it === "0" || it === "1").join("");
 
-        const normalizedOutput = output.replaceAll(/\s/g, "");
+
+        const normalizedOutput = output.split("").filter(it => it === "0" || it === "1").join("");
         const accepted = normalizedOutput.includes(expectedOutput);
 
         const combinedOutput = `== Assembler Output ==\n\n${output}\n\n== Build Logs ==\n\n${logs}`;
