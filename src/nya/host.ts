@@ -125,48 +125,6 @@ async function main() {
         res.status(200).json([...new Set(passedUsers)]);
     });
 
-    // const testSessions = new Map<string, AssemblerTestCase>();
-
-    // app.get("/acquire-assembler-test", (_, res) => {
-    //     const test = requestAssemblerTest();
-    //     testSessions.set(test.session, test);
-    //     setTimeout(() => {
-    //         testSessions.delete(test.session);
-    //     }, 60 * 1000);
-    //     res.status(200).json(test).end();
-    // });
-    //
-    // app.post("/commit-assembler-test", (req, res) => {
-    //     const { session, results } = req.body as { session: string, results: string[] };
-    //     const origin = testSessions.get(session);
-    //     if (!origin) {
-    //         res.status(404).end();
-    //         return;
-    //     }
-    //
-    //     testSessions.delete(session);
-    //
-    //     let i = -1;
-    //     for (const p of origin.test) {
-    //         i++;
-    //         const ctx = loli.build(p);
-    //         if (ctx.hasError()) continue;
-    //         const strippedBin = ctx.outputBinary()[0];
-    //         strippedBin.shift();
-    //         if (strippedBin.join("\n").trim() !== results[i].trim()) {
-    //             res.status(418).json(
-    //                 {
-    //                     source: p,
-    //                     expected: strippedBin.join("\n"),
-    //                     received: results[i]
-    //                 }
-    //             ).end();
-    //             return;
-    //         }
-    //     }
-    //     res.status(204).end();
-    // });
-
     app.post("/auth/login", async (req, res) => {
         const body = req.body as { uid: string, pwd: string };
 
