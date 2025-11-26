@@ -8,6 +8,8 @@ import * as os from "node:os";
 import { nanoid } from "nanoid";
 import * as fs from "node:fs/promises";
 import { loli } from "../loli/api";
+import zlib from "node:zlib";
+import { promisify } from "node:util";
 
 const limit = pLimit(16);
 
@@ -52,10 +54,13 @@ async function evaluateProgram(context: TestInput): Promise<TestResult> {
     return await programLimit(() => evaluateProgramInner(context));
 }
 
+const unzip = promisify(zlib.unzip);
+
 async function evaluateProgramInner(context: TestInput): Promise<TestResult> {
     const input = requestSingleAssemblerTest();
     const zipPt = path.resolve(os.tmpdir(), nanoid() + ".zip");
-    await fs.writeFile(zipPt, Buffer.from(context.source, "base64"));
+    const gzipFile = Buffer.from(context.source, "base64");
+    await fs.writeFile(zipPt, await unzip(gzipFile));
 
     const fakeContext: TestInput = {
         uid: context.uid,
