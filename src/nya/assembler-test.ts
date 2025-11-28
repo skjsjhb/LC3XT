@@ -34,15 +34,24 @@ const instrArgsFormat: Record<string, string> = {
     ".FILL": "I"
 };
 
+const legitModeAllowedOp = ["ADD", "AND", "BR", "JSR", "LD", "LEA", "NOT", "ST"];
+
 export function requestSingleAssemblerTest(): string {
-    return createProgram();
+    return createProgram(false);
 }
 
+export function requestSingleEmulatorTest(): string {
+    return createProgram(true);
+}
+
+/**
+ * @deprecated Will be removed.
+ */
 export function requestAssemblerTest(): AssemblerTestCase {
     const session = nanoid();
     const programs = [];
     for (let i = 0; i < 10; i++) {
-        programs.push(createProgram());
+        programs.push(createProgram(false));
     }
     return {
         session,
@@ -74,7 +83,7 @@ function createImmediate(): string {
     return randOf("x", "#") + randOf("", "-") + Math.floor(Math.random() * 10);
 }
 
-function createOperands(types: string, labels: string[]): string {
+function createOperands(op: string, types: string, labels: string[], legitMode: boolean): string {
     const out: string[] = [];
     for (const t of types.split("")) {
         switch (t) {
@@ -86,7 +95,15 @@ function createOperands(types: string, labels: string[]): string {
                 out.push(createImmediate());
                 break;
             case "L":
-                out.push(randOf(...labels));
+                if (legitMode) {
+                    if (op === "BR" || op === "JSR") {
+                        out.push("x" + Math.round(Math.random() * 5));
+                    } else {
+                        out.push("LEGIT_LABEL");
+                    }
+                } else {
+                    out.push(randOf(...labels));
+                }
                 break;
             case "N":
                 out.push(Math.round(Math.random() * 10).toString());
@@ -98,13 +115,19 @@ function createOperands(types: string, labels: string[]): string {
     return out.join(randOf(",", ", "));
 }
 
-function randInstr(labels: string[]): string {
-    const [op, t] = randOf(...Object.entries(instrArgsFormat));
-    const operands = createOperands(t, labels);
+function randInstr(labels: string[], legitMode: boolean): string {
+    let instrSet = Object.entries(instrArgsFormat);
+
+    if (legitMode) {
+        instrSet = instrSet.filter(it => legitModeAllowedOp.includes(it[0]));
+    }
+
+    const [op, t] = randOf(...instrSet);
+    const operands = createOperands(op, t, labels, legitMode);
     return randOf(op, op.toLowerCase()) + " " + operands;
 }
 
-function createProgram(): string {
+function createProgram(legitMode: boolean): string {
     const labels: string[] = [];
 
 
@@ -117,13 +140,28 @@ function createProgram(): string {
     }
 
     let out: string[] = [];
-    out.push(".ORIG" + " x3000");
 
     for (let i = 0; i < instrCount; i++) {
-        out.push(randInstr(labels));
+        out.push(randInstr(labels, legitMode));
+    }
+
+    if (legitMode) {
+        out.unshift(
+            "AND R0, R0, x0",
+            "AND R1, R1, x0",
+            "AND R2, R2, x0",
+            "AND R3, R3, x0",
+            "AND R4, R4, x0",
+            "AND R5, R5, x0",
+            "AND R6, R6, x0",
+            "AND R7, R7, x0"
+        );
+        out.push(...Array(10).fill("HALT"));
+        out.push("LEGIT_LABEL .FILL x0");
     }
 
     out.push(".END");
+    out.unshift(".ORIG x3000");
 
     const hasLabel = new Set<number>();
 
