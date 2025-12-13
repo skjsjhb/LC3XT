@@ -114,32 +114,34 @@ function createCommand(bs: BuildSystem): string {
                 "cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=/usr/bin/clang " +
                 "-DCMAKE_CXX_COMPILER=/usr/bin/clang++ .. && " +
                 "cmake --build . &&" +
-                "exec $(find . -type f -maxdepth 1 -executable -print -quit) < ../_input.arc > ../_output.arc";
+                "timeout 1 exec $(find . -type f -maxdepth 1 -executable -print -quit) < ../_input.arc | head -c 4K >" +
+                " ../_output.arc";
         case "Makefile":
             return "cd /lc3 && " +
                 "make CC=/usr/bin/clang CXX=/usr/bin/clang++ CFLAGS=-O2 CXXFLAGS=-O2 && " +
-                "exec $(find . -type f -maxdepth 1 -executable -print -quit) < _input.arc > _output.arc";
+                "timeout 1 exec $(find . -type f -maxdepth 1 -executable -print -quit) < _input.arc | head -c 4K >" +
+                " _output.arc";
         case "PlainC":
             return "cd /lc3 && " +
-                "clang -O2 *.c && exec ./a.out < _input.arc > _output.arc";
+                "clang -O2 *.c && timeout 1 exec ./a.out < _input.arc | head -c 4K > _output.arc";
         case "PlainCpp":
             return "cd /lc3 && " +
                 "clang++ -O2 $(find . -type f -maxdepth 1 \\( -iname \"*.cc\" -o -iname \"*.c\" -o -iname \"*.cxx\"" +
-                " -o -iname \"*.cpp\" \\)) && exec" +
-                " ./a.out < _input.arc > _output.arc";
+                " -o -iname \"*.cpp\" \\)) && timeout 1 exec" +
+                " ./a.out < _input.arc | head -c 4K > _output.arc";
         case "Node":
             return "cd /lc3 && " +
                 "[ -f main.ts ] && exec bun main.ts < _input.arc > _output.arc || " +
-                "exec bun main.js < _input.arc > _output.arc";
+                "timeout 1 exec bun main.js < _input.arc | head -c 4K > _output.arc";
         case "Python":
             return "cd /lc3 && " +
-                "exec python main.py < _input.arc > _output.arc";
+                "timeout 1 exec python main.py < _input.arc | head -c 4K > _output.arc";
         case "Cargo":
             return "cd /lc3 && " +
-                "exec cargo run --release < _input.arc > _output.arc";
+                "exec cargo run --release < _input.arc | head -c 1M > _output.arc";
         case "Gradle":
             return "cd /lc3 && " +
-                "chmod +x ./gradlew && exec ./gradlew run < _input.arc > _output.arc";
+                "chmod +x ./gradlew && exec ./gradlew run < _input.arc | head -c 1M > _output.arc";
     }
 }
 
