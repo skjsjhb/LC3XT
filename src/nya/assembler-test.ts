@@ -20,7 +20,7 @@ const instrArgsFormat: Record<string, string> = {
     ST: "RL",
     STI: "RL",
     STR: "RRI",
-    TRAP: "I",
+    TRAP: "U",
     RTI: "",
     RET: "",
     HALT: "",
@@ -79,8 +79,8 @@ function createReg(): string {
     return randOf("R", "r") + randInt(0, 7);
 }
 
-function createImmediate(): string {
-    return randOf("x", "#") + randOf("", "-") + Math.floor(Math.random() * 10);
+function createImmediate(signed: boolean): string {
+    return randOf("x", "#") + (signed ? randOf("", "-") : "") + Math.floor(Math.random() * 10);
 }
 
 function createOperands(op: string, types: string, labels: string[], legitMode: boolean): string {
@@ -92,7 +92,10 @@ function createOperands(op: string, types: string, labels: string[], legitMode: 
                 out.push(createReg());
                 break;
             case "I":
-                out.push(createImmediate());
+                out.push(createImmediate(true));
+                break;
+            case "U":
+                out.push(createImmediate(false));
                 break;
             case "L":
                 if (legitMode) {
