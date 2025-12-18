@@ -138,10 +138,10 @@ function createCommand(bs: BuildSystem): string {
                 "timeout 1 python main.py < _input.arc | head -c 4k > _output.arc";
         case "Cargo":
             return "cd /lc3 && " +
-                "timeout 600 cargo run --release < _input.arc | head -c 1M > _output.arc";
+                "timeout 600 cargo run --release < _input.arc | head -c 1m > _output.arc";
         case "Gradle":
             return "cd /lc3 && " +
-                "chmod +x ./gradlew && timeout 600 ./gradlew run < _input.arc | head -c 1M > _output.arc";
+                "chmod +x ./gradlew && timeout 600 ./gradlew run < _input.arc | head -c 1m > _output.arc";
     }
 }
 
